@@ -45,6 +45,7 @@ class Orders with ChangeNotifier {
                     title: item['title'],
                     quantity: item['quantity'],
                     price: item['price'],
+                    gst: item['gst'],
                   ),
                 )
                 .toList(),

@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:tuto/providers/auth.dart';
+import 'package:tuto/providers/chapters.dart';
+import 'package:tuto/providers/questions.dart';
+import 'package:tuto/screens/questions.dart';
+import 'package:tuto/screens/edit_chapter.dart';
+import 'package:tuto/screens/edit_question.dart';
 
 import './screens/cart_screen.dart';
-import './screens/products_overview_screen.dart';
-import './screens/product_detail_screen.dart';
-import './providers/products.dart';
+import 'screens/books_overview.dart';
+import 'screens/chapters.dart';
+import 'providers/books.dart';
 import './providers/cart.dart';
 import './providers/orders.dart';
 import './screens/orders_screen.dart';
 import './screens/user_products_screen.dart';
-import './screens/edit_product_screen.dart';
+import 'screens/edit_book.dart';
 import './screens/auth_screen.dart';
 import './screens/splash.dart';
 
@@ -25,9 +31,19 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
+      
       providers: [
         ChangeNotifierProvider.value(
-          value: Products(),
+          value: Auth(),
+        ),
+        ChangeNotifierProvider.value(
+          value: Books(),
+        ),
+        ChangeNotifierProvider.value(
+          value: Chapters(),
+        ),
+        ChangeNotifierProvider.value(
+          value: Questions(),
         ),
         ChangeNotifierProvider.value(
           value: Cart(),
@@ -37,10 +53,13 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-          title: 'tuto',
+        debugShowCheckedModeBanner: false,
+          title: 'workbook',
           theme: ThemeData(
-            primarySwatch: Colors.purple,
-            accentColor: Colors.deepOrange,
+            //primarySwatch: Colors.purple,
+            //accentColor: Colors.deepOrange,
+            primarySwatch: Colors.indigo,
+            accentColor: Colors.amber,
             fontFamily: 'Lato',
           ),
           home: StreamBuilder(
@@ -50,16 +69,36 @@ class MyApp extends StatelessWidget {
                   return SplashScreen();
                 }
                 if (userSnapshot.hasData) {
-                  return ProductsOverviewScreen();
+                  return FutureBuilder(
+                      future: Provider.of<Auth>(ctx, listen: false)
+                          .fetchCurrentUser(),
+                      builder: (ctx, dataSnapshot) {
+                        if (dataSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        } else if (dataSnapshot.error != null) {
+                          // Error handling
+                          return Center(child: Text('An Error occured'));
+                        } else {
+                          return ProductsOverviewScreen();
+                        }
+                      });
+                  //return ProductsOverviewScreen();
                 }
                 return AuthScreen();
               }),
           routes: {
-            ProductDetailScreen.routeName: (ctx) => ProductDetailScreen(),
+            ProductsOverviewScreen.routeName: (ctx) => ProductsOverviewScreen(),
+            BookDetailScreen.routeName: (ctx) => BookDetailScreen(),
+            ChapterDetailScreen.routeName: (ctx) => ChapterDetailScreen(),
             CartScreen.routeName: (ctx) => CartScreen(),
             OrdersScreen.routeName: (ctx) => OrdersScreen(),
             UserProductsScreen.routeName: (ctx) => UserProductsScreen(),
-            EditProductScreen.routeName: (ctx) => EditProductScreen(),
+            EditBookScreen.routeName: (ctx) => EditBookScreen(),
+            EditChapterScreen.routeName: (ctx) => EditChapterScreen(),
+            EditQuestionScreen.routeName: (ctx) => EditQuestionScreen(),
           }),
     );
   }

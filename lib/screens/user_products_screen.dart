@@ -1,29 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/products.dart';
+import '../providers/books.dart';
 import '../widgets/user_product_item.dart';
 import '../widgets/app_drawer.dart';
-import './edit_product_screen.dart';
+import 'edit_book.dart';
 
 class UserProductsScreen extends StatelessWidget {
   static const routeName = '/user-products';
 
   Future<void> _refreshProducts(BuildContext context) async {
-    await Provider.of<Products>(context).fetchAndSetProducts();
+    //await Provider.of<Books>(context).fetchAndSetProducts();
   }
 
   @override
   Widget build(BuildContext context) {
-    final productsData = Provider.of<Products>(context);
+    final productsData = Provider.of<Books>(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your Products'),
+        title: const Text('Manage Books'),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
-              Navigator.of(context).pushNamed(EditProductScreen.routeName);
+              Navigator.of(context).pushNamed(EditBookScreen.routeName);
             },
           ),
         ],

@@ -7,6 +7,8 @@ class CartItem extends StatelessWidget {
   final String id;
   final String productId;
   final double price;
+  final double gst;
+  final double discount;
   final int quantity;
   final String title;
 
@@ -16,6 +18,8 @@ class CartItem extends StatelessWidget {
     this.price,
     this.quantity,
     this.title,
+    this.gst,
+    this.discount,
   );
 
   @override
@@ -41,25 +45,25 @@ class CartItem extends StatelessWidget {
         return showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-                title: Text('Are you sure?'),
-                content: Text(
-                  'Do you want to remove the item from the cart?',
-                ),
-                actions: <Widget>[
-                  FlatButton(
-                    child: Text('No'),
-                    onPressed: () {
-                      Navigator.of(ctx).pop(false);
-                    },
-                  ),
-                  FlatButton(
-                    child: Text('Yes'),
-                    onPressed: () {
-                      Navigator.of(ctx).pop(true);
-                    },
-                  ),
-                ],
+            title: Text('Are you sure?'),
+            content: Text(
+              'Do you want to remove the item from the cart?',
+            ),
+            actions: <Widget>[
+              FlatButton(
+                child: Text('No'),
+                onPressed: () {
+                  Navigator.of(ctx).pop(false);
+                },
               ),
+              FlatButton(
+                child: Text('Yes'),
+                onPressed: () {
+                  Navigator.of(ctx).pop(true);
+                },
+              ),
+            ],
+          ),
         );
       },
       onDismissed: (direction) {
@@ -82,7 +86,8 @@ class CartItem extends StatelessWidget {
               ),
             ),
             title: Text(title),
-            subtitle: Text('Total: \$${(price * quantity)}'),
+            subtitle: Text(
+                '${(price * quantity)} + ${(gst * quantity).toStringAsFixed(1)} GST'),
             trailing: Text('$quantity x'),
           ),
         ),
