@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tuto/data/constants.dart';
-import 'package:tuto/models/user.dart';
-import 'package:tuto/providers/auth.dart';
-import 'package:tuto/screens/edit_book.dart';
 
-import '../screens/chapters.dart';
-import '../providers/chapters.dart';
+import '../data/constants.dart';
+import '../providers/auth.dart';
+import '../screens/edit/edit_book.dart';
+import '../screens/overview/book_chapters.dart';
 import '../providers/cart.dart';
 import './../models/book.dart';
 

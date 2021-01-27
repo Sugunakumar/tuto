@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tuto/data/constants.dart';
-import 'package:tuto/providers/auth.dart';
 
-import '../providers/chapters.dart';
-import '../providers/questions.dart';
-import './edit_question.dart';
-import '../widgets/question_item.dart';
+import '../../data/constants.dart';
+import '../../providers/auth.dart';
+import '../../widgets/questions_list.dart';
+import '../../providers/chapters.dart';
+import '../../providers/questions.dart';
+import '../edit/edit_question.dart';
 
 enum FilterOptions {
   OnlyQuestions,
@@ -14,7 +14,7 @@ enum FilterOptions {
 }
 
 class ChapterDetailScreen extends StatefulWidget {
-  static const routeName = '/chapter-detail';
+  static const routeName = '/chapter-questions';
 
   @override
   _ChapterDetailScreenState createState() => _ChapterDetailScreenState();
@@ -24,16 +24,13 @@ class _ChapterDetailScreenState extends State<ChapterDetailScreen> {
   var _showOnlyQuestions = false;
   @override
   Widget build(BuildContext context) {
-    final Map map =
-        ModalRoute.of(context).settings.arguments as Map; // is the id!
+    final chapterId = ModalRoute.of(context).settings.arguments as String;
 
-    final chapterId = map['chapterId'];
     print("chapterId : " + chapterId);
 
     final authData = Provider.of<Auth>(context, listen: false);
-
     final chaptersData = Provider.of<Chapters>(context, listen: false);
-
+    final questionsData = Provider.of<Questions>(context, listen: false);
     final loadedChapter = chaptersData.findChapterById(chapterId);
 
     return Scaffold(
@@ -72,33 +69,24 @@ class _ChapterDetailScreenState extends State<ChapterDetailScreen> {
           ),
         ],
       ),
-      body: FutureBuilder(
-          future: Provider.of<Questions>(
-            context,
-            listen: false,
-          ).fetchAndSetQuestion(chaptersData.bookId, chapterId),
-          builder: (ctx, dataSnapshot) {
-            if (dataSnapshot.connectionState == ConnectionState.waiting) {
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            } else if (dataSnapshot.error != null) {
-              // Error handling
-              print(dataSnapshot.error.toString());
-              return Center(child: Text('An Error occured'));
-            } else {
-              return Consumer<Questions>(builder: (ctx, allQuestions, _) {
-                final questions = allQuestions.questions;
-                return ListView.builder(
-                  itemCount: questions.length,
-                  itemBuilder: (ctx, i) => ChangeNotifierProvider.value(
-                    value: questions[i],
-                    child: QuestionItem(_showOnlyQuestions),
-                  ),
-                );
-              });
-            }
-          }),
+      body: loadedChapter.questions.isEmpty
+          ? FutureBuilder(
+              future: questionsData.fetchAndSetQuestion(
+                  chaptersData.bookId, chapterId),
+              builder: (ctx, dataSnapshot) {
+                if (dataSnapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (dataSnapshot.error != null) {
+                  // Error handling
+                  print(dataSnapshot.error.toString());
+                  return Center(child: Text('An Error occured'));
+                } else {
+                  return QuestionsList(loadedChapter, _showOnlyQuestions);
+                }
+              })
+          : QuestionsList(loadedChapter, _showOnlyQuestions),
       floatingActionButton: authData.hasAccess(Entity.Question, Operations.Add)
           ? FloatingActionButton(
               child: Icon(Icons.add),

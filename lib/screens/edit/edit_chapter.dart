@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tuto/models/chapter.dart';
-import 'package:tuto/providers/chapters.dart';
 
-import '../models/book.dart';
+import '../../models/chapter.dart';
+import '../../providers/chapters.dart';
 
 class EditChapterScreen extends StatefulWidget {
   static const routeName = '/edit-chapter';

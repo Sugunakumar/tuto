@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/books.dart';
 import '../widgets/user_product_item.dart';
 import '../widgets/app_drawer.dart';
-import 'edit_book.dart';
+import 'edit/edit_book.dart';
 
 class UserProductsScreen extends StatelessWidget {
   static const routeName = '/user-products';
@@ -37,7 +37,7 @@ class UserProductsScreen extends StatelessWidget {
             itemCount: productsData.items.length,
             itemBuilder: (_, i) => Column(
               children: [
-                UserProductItem(
+                UserBookItem(
                   productsData.items[i].id,
                   productsData.items[i].title,
                   productsData.items[i].imageUrl,

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tuto/data/constants.dart';
-import 'package:tuto/models/chapter.dart';
-import 'package:tuto/providers/auth.dart';
-import 'package:tuto/providers/chapters.dart';
-import 'package:tuto/screens/edit_chapter.dart';
 
-import '../screens/questions.dart';
+import '../data/constants.dart';
+import '../models/chapter.dart';
+import '../providers/auth.dart';
+import '../providers/chapters.dart';
+import '../screens/edit/edit_chapter.dart';
+import '../screens/overview/chapter_questions.dart';
 
 class ChapterItem extends StatelessWidget {
   @override
@@ -63,12 +63,8 @@ class ChapterItem extends StatelessWidget {
             ),
           ),
           onTap: () {
-            Navigator.of(context).pushNamed(
-              ChapterDetailScreen.routeName,
-              arguments: {
-                'chapterId': chapter.id,
-              },
-            );
+            Navigator.of(context).pushNamed(ChapterDetailScreen.routeName,
+                arguments: chapter.id);
           },
         ),
         // leading: CircleAvatar(

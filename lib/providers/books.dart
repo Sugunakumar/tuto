@@ -6,7 +6,7 @@ import '../data/constants.dart';
 import '../common/utils.dart';
 
 class Books with ChangeNotifier {
-  final productTable = tables['books'];
+  final bookTable = tables['books'];
   final chapterTable = tables['chapters'];
 
   final db = FirebaseFirestore.instance;
@@ -29,10 +29,11 @@ class Books with ChangeNotifier {
     return _items.firstWhere((prod) => prod.id == id);
   }
 
-  Future<void> fetchAndSetProducts(String userId) async {
-    final List<Book> loadedProducts = [];
+  Future<void> fetchAndSetBooks(String userId) async {
+    print("fetchAndSetBooks");
+    final List<Book> loadedBooks = [];
     try {
-      final snapshot = await db.collection(productTable).get();
+      final snapshot = await db.collection(bookTable).get();
       if (snapshot.size == 0) return;
       final userFavSnapshot = await db.collection(userTable).doc(userId).get();
 
@@ -40,11 +41,10 @@ class Books with ChangeNotifier {
           ? userFavSnapshot.get('favorites')
           : null;
 
-      print("fetchAndSetProducts");
       //print("fav : " + fav.toString());
 
       snapshot.docs.forEach((doc) async {
-        loadedProducts.add(
+        loadedBooks.add(
           Book(
             id: doc.id,
             grade: doc.get('grade'),
@@ -76,7 +76,7 @@ class Books with ChangeNotifier {
       // });
 
       // final snapshottrial = await FirebaseFirestore.instance
-      //     .collection(productTable)
+      //     .collection(bookTable)
       //     .doc("1Lf87x0AKGdW4CDnzkHc")
       //     .collection("chapters")
       //     .get();
@@ -84,42 +84,41 @@ class Books with ChangeNotifier {
       //   print("plain way : " + element.get("title"));
       // });
 
-      _items = loadedProducts;
+      _items = loadedBooks;
       notifyListeners();
     } catch (e) {
       throw (e);
     }
   }
 
-  Future<void> addProduct(Book product) async {
-    final newProduct = {
-      'grade': product.grade,
-      'subject': product.subject.capitalizeFirstofEach,
-      'title': product.title.capitalizeFirstofEach,
-      'description': product.description,
-      'pages': product.pages,
-      'editor': product.editor.inCaps,
-      'publisher': product.publisher.capitalizeFirstofEach,
-      'imageUrl': product.imageUrl
+  Future<void> addBook(Book book) async {
+    final newBook = {
+      'grade': book.grade,
+      'subject': book.subject.capitalizeFirstofEach,
+      'title': book.title.capitalizeFirstofEach,
+      'description': book.description,
+      'pages': book.pages,
+      'editor': book.editor.inCaps,
+      'publisher': book.publisher.capitalizeFirstofEach,
+      'imageUrl': book.imageUrl
     };
 
     try {
-      final addedProduct = await FirebaseFirestore.instance
-          .collection(productTable)
-          .add(newProduct);
-      final newProductList = Book(
-        id: addedProduct.id,
-        grade: product.grade,
-        subject: product.subject.capitalizeFirstofEach,
-        title: product.title.capitalizeFirstofEach,
-        description: product.description,
-        pages: product.pages,
-        editor: product.editor.inCaps,
-        publisher: product.publisher.capitalizeFirstofEach,
-        imageUrl: product.imageUrl,
+      final addedBook =
+          await FirebaseFirestore.instance.collection(bookTable).add(newBook);
+      final newBookList = Book(
+        id: addedBook.id,
+        grade: book.grade,
+        subject: book.subject.capitalizeFirstofEach,
+        title: book.title.capitalizeFirstofEach,
+        description: book.description,
+        pages: book.pages,
+        editor: book.editor.inCaps,
+        publisher: book.publisher.capitalizeFirstofEach,
+        imageUrl: book.imageUrl,
       );
-      //_items.add(newProductList);
-      _items.insert(0, newProductList);
+      //_items.add(newBookList);
+      _items.insert(0, newBookList);
       notifyListeners();
     } catch (e) {
       print(e);
@@ -127,24 +126,21 @@ class Books with ChangeNotifier {
     }
   }
 
-  Future<void> updateProduct(String id, Book newProduct) async {
+  Future<void> updateBook(String id, Book newBook) async {
     final prodIndex = _items.indexWhere((prod) => prod.id == id);
     if (prodIndex >= 0) {
       try {
-        await FirebaseFirestore.instance
-            .collection(productTable)
-            .doc(id)
-            .update({
-          'grade': newProduct.grade,
-          'subject': newProduct.subject,
-          'title': newProduct.title,
-          'description': newProduct.description,
-          'pages': newProduct.pages,
-          'editor': newProduct.editor,
-          'publisher': newProduct.publisher,
-          'imageUrl': newProduct.imageUrl
+        await FirebaseFirestore.instance.collection(bookTable).doc(id).update({
+          'grade': newBook.grade,
+          'subject': newBook.subject,
+          'title': newBook.title,
+          'description': newBook.description,
+          'pages': newBook.pages,
+          'editor': newBook.editor,
+          'publisher': newBook.publisher,
+          'imageUrl': newBook.imageUrl
         });
-        _items[prodIndex] = newProduct;
+        _items[prodIndex] = newBook;
         notifyListeners();
       } catch (e) {
         print(e);
@@ -155,20 +151,17 @@ class Books with ChangeNotifier {
     }
   }
 
-  Future<void> deleteProduct(String id) async {
-    final existingProductIndex = _items.indexWhere((prod) => prod.id == id);
-    var existingProduct = _items[existingProductIndex];
-    _items.removeAt(existingProductIndex);
+  Future<void> deleteBook(String id) async {
+    final existingBookIndex = _items.indexWhere((prod) => prod.id == id);
+    var existingBook = _items[existingBookIndex];
+    _items.removeAt(existingBookIndex);
     notifyListeners();
 
     try {
-      await FirebaseFirestore.instance
-          .collection(productTable)
-          .doc(id)
-          .delete();
-      existingProduct = null;
+      await FirebaseFirestore.instance.collection(bookTable).doc(id).delete();
+      existingBook = null;
     } catch (e) {
-      _items.insert(existingProductIndex, existingProduct);
+      _items.insert(existingBookIndex, existingBook);
       notifyListeners();
       throw e;
     }

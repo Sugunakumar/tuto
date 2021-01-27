@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import './../data/constants.dart';
+import '../models/chapter.dart';
+import '../data/constants.dart';
 
 final bookTable = tables['books'];
 final userTable = tables['users'];
@@ -16,7 +17,9 @@ class Book with ChangeNotifier {
   final String editor;
   final String publisher;
   final String imageUrl;
+
   bool isFavorite;
+  List<Chapter> chapters =[];
 
   Book({
     @required this.id,

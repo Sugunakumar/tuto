@@ -1,36 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tuto/data/constants.dart';
-import 'package:tuto/providers/auth.dart';
-import 'package:tuto/providers/chapters.dart';
-import 'package:tuto/screens/edit_chapter.dart';
 
-import '../widgets/chapters_list.dart';
-import '../providers/books.dart';
-
-
+import '../../data/constants.dart';
+import '../../providers/auth.dart';
+import '../../providers/chapters.dart';
+import '../edit/edit_chapter.dart';
+import '../../widgets/chapters_list.dart';
+import '../../providers/books.dart';
 
 class BookDetailScreen extends StatefulWidget {
-  static const routeName = '/product-detail';
+  static const routeName = '/book-chapters';
 
   @override
   _BookDetailScreenState createState() => _BookDetailScreenState();
 }
 
 class _BookDetailScreenState extends State<BookDetailScreen> {
-  
-
   @override
   Widget build(BuildContext context) {
     final authData = Provider.of<Auth>(context, listen: false);
+    final booksData = Provider.of<Books>(context, listen: false);
+    final chaptersData = Provider.of<Chapters>(context, listen: false);
 
     final bookId =
         ModalRoute.of(context).settings.arguments as String; // is the id!
     print("bookId : " + bookId);
-    final loadedBook = Provider.of<Books>(
-      context,
-      listen: false,
-    ).findBookById(bookId);
+    final loadedBook = booksData.findBookById(bookId);
     //final chapters = loadedBook.fetchAndSetChapters(bookId);
     //print("chapters length : " + chapters.length.toString());
     return Scaffold(
@@ -45,34 +40,33 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           ),
         ],
       ),
-      body: FutureBuilder(
-          //future: loadedBook.fetchAndSetChapters(),
-          future: Provider.of<Chapters>(
-            context,
-            listen: false,
-          ).fetchAndSetChapters(bookId),
-          builder: (ctx, dataSnapshot) {
-            if (dataSnapshot.connectionState == ConnectionState.waiting) {
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            } else if (dataSnapshot.error != null) {
-              // Error handling
-              print(dataSnapshot.error.toString());
-              return Center(child: Text('An Error occured'));
-            } else {
-              return ChaptersList();
-              // return Consumer<Chapters>(
-              //   builder: (ctx, chapterData, child) => ListView.builder(
-              //     itemCount: chapterData.chapters.length,
-              //     itemBuilder: (ctx, i) => ChangeNotifierProvider.value(
-              //       value: chapterData.chapters[i],
-              //       child: ChapterList(),
-              //     ),
-              //   ),
-              // );
-            }
-          }),
+      body: loadedBook.chapters.isEmpty
+          ? FutureBuilder(
+              //future: loadedBook.fetchAndSetChapters(),
+              future: chaptersData.fetchAndSetChapters(bookId),
+              builder: (ctx, dataSnapshot) {
+                if (dataSnapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (dataSnapshot.error != null) {
+                  // Error handling
+                  print(dataSnapshot.error.toString());
+                  return Center(child: Text('An Error occured'));
+                } else {
+                  return ChaptersList(loadedBook);
+                  // return Consumer<Chapters>(
+                  //   builder: (ctx, chapterData, child) => ListView.builder(
+                  //     itemCount: chapterData.chapters.length,
+                  //     itemBuilder: (ctx, i) => ChangeNotifierProvider.value(
+                  //       value: chapterData.chapters[i],
+                  //       child: ChapterList(),
+                  //     ),
+                  //   ),
+                  // );
+                }
+              })
+          : ChaptersList(loadedBook),
       floatingActionButton: authData.hasAccess(Entity.Chapter, Operations.Add)
           ? FloatingActionButton(
               child: Icon(Icons.add),

@@ -3,11 +3,24 @@ const tables = {
   'chapters': 'chapters',
   'questions': 'questions',
   'users': 'users',
+  'schools': 'schools',
+  'classes': 'classes',
+  'students': 'students',
+  'teachers': 'teachers',
+  'tasks': 'tasks',
 };
+
+// The subjects must be remove from here and got from DB
 
 const grades = {
   'Grade 1': ['English Aplhabets', 'Coloring', 'Numbers'],
   'Grade 2': ['Maths', 'English', 'Numbers'],
+  'Grade 3': ['Maths', 'English', 'Social', 'Science', 'Computer'],
+  'Grade 4': ['Maths', 'English', 'Social', 'Science', 'Computer'],
+  'Grade 5': ['Maths', 'English', 'Social', 'Science', 'Computer'],
+  'Grade 6': ['Maths', 'English', 'Social', 'Science', 'Computer'],
+  'Grade 7': ['Maths', 'English', 'Social', 'Science', 'Computer'],
+  'Grade 8': ['Maths', 'English', 'Social', 'Science', 'Computer'],
 };
 
 const questionType = ['Objective', 'Descriptive'];
@@ -24,10 +37,10 @@ enum Entity { Book, Chapter, Question, School, User }
 
 enum Operations { View, Add, Update, Delete }
 
-enum Role { Student, Teacher, SchoolAdmin, Admin }
+enum Role { Individual, Student, Teacher, Admin, Manager }
 
 const permission = {
-  Role.Admin: {
+  Role.Manager: {
     Entity.Book: {
       Operations.Add: true,
       Operations.Update: true,
@@ -54,7 +67,12 @@ const permission = {
       Operations.Delete: true
     },
   },
-  Role.SchoolAdmin: {
+  Role.Admin: {
+    Entity.School: {
+      Operations.Add: true,
+      Operations.Update: true,
+      Operations.Delete: false
+    },
     Entity.Book: {
       Operations.Add: true,
       Operations.Update: true,

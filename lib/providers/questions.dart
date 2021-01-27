@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:tuto/models/question.dart';
 
+import '../models/question.dart';
 import '../data/constants.dart';
 
 class Questions with ChangeNotifier {

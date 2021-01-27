@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../screens/edit_book.dart';
+import '../screens/edit/edit_book.dart';
 import '../providers/books.dart';
 
-class UserProductItem extends StatelessWidget {
+class UserBookItem extends StatelessWidget {
   final String id;
   final String title;
   final String imageUrl;
 
-  UserProductItem(this.id, this.title, this.imageUrl);
+  UserBookItem(this.id, this.title, this.imageUrl);
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +36,7 @@ class UserProductItem extends StatelessWidget {
               onPressed: () async {
                 try {
                   await Provider.of<Books>(context, listen: false)
-                      .deleteProduct(id);
+                      .deleteBook(id);
                 } catch (e) {
                   scaffold.showSnackBar(
                     SnackBar(

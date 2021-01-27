@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../widgets/picker/box_image.dart';
+import '../../widgets/picker/box_image.dart';
 
-import '../data/constants.dart';
-import '../models/question.dart';
+import '../../data/constants.dart';
+import '../../models/question.dart';
 
-import '../providers/questions.dart';
+import '../../providers/questions.dart';
 
 class EditQuestionScreen extends StatefulWidget {
   static const routeName = '/edit-question';
@@ -23,7 +23,7 @@ class _EditQuestionScreenState extends State<EditQuestionScreen> {
   final _questionFocusNode = FocusNode();
   final _answerFocusNode = FocusNode();
 
-  File _userImageFile;
+  
 
   final _form = GlobalKey<FormState>();
 
@@ -31,6 +31,7 @@ class _EditQuestionScreenState extends State<EditQuestionScreen> {
 
   String titleAction = "Edit Question";
 
+  File _userImageFile;
   void _pickedImage(File image) {
     _userImageFile = image;
   }

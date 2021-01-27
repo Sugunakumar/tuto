@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/book.dart';
-import '../providers/books.dart';
-import '../data/constants.dart';
+import '../../models/book.dart';
+import '../../providers/books.dart';
+import '../../data/constants.dart';
 
 class EditBookScreen extends StatefulWidget {
-  static const routeName = '/edit-product';
+  static const routeName = '/edit-book';
 
   @override
   _EditBookScreenState createState() => _EditBookScreenState();
@@ -24,7 +24,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
 
   final _imageUrlFocusNode = FocusNode();
   final _form = GlobalKey<FormState>();
-  var _editedProduct = Book(
+  var _editedBook = Book(
     id: null,
     grade: '',
     subject: '',
@@ -70,19 +70,19 @@ class _EditBookScreenState extends State<EditBookScreen> {
     if (_isInit) {
       final productId = ModalRoute.of(context).settings.arguments as String;
       if (productId != null) {
-        _editedProduct =
+        _editedBook =
             Provider.of<Books>(context, listen: false).findBookById(productId);
         _initValues = {
-          'grade': _editedProduct.grade,
-          'subject': _editedProduct.subject,
-          'title': _editedProduct.title,
-          'description': _editedProduct.description,
-          'pages': _editedProduct.pages.toString(),
-          'editor': _editedProduct.editor,
-          'publisher': _editedProduct.publisher,
-          'imageUrl': _editedProduct.imageUrl,
+          'grade': _editedBook.grade,
+          'subject': _editedBook.subject,
+          'title': _editedBook.title,
+          'description': _editedBook.description,
+          'pages': _editedBook.pages.toString(),
+          'editor': _editedBook.editor,
+          'publisher': _editedBook.publisher,
+          'imageUrl': _editedBook.imageUrl,
         };
-        _imageUrlController.text = _editedProduct.imageUrl;
+        _imageUrlController.text = _editedBook.imageUrl;
       } else
         titleAction = "Add Book";
     }
@@ -146,13 +146,12 @@ class _EditBookScreenState extends State<EditBookScreen> {
     setState(() {
       _isLoading = true;
     });
-    if (_editedProduct.id != null) {
+    if (_editedBook.id != null) {
       await Provider.of<Books>(context, listen: false)
-          .updateProduct(_editedProduct.id, _editedProduct);
+          .updateBook(_editedBook.id, _editedBook);
     } else {
       try {
-        await Provider.of<Books>(context, listen: false)
-            .addProduct(_editedProduct);
+        await Provider.of<Books>(context, listen: false).addBook(_editedBook);
       } catch (e) {
         await showDialog<Null>(
             context: context,
@@ -229,17 +228,17 @@ class _EditBookScreenState extends State<EditBookScreen> {
                               });
                             },
                             onSaved: (value) {
-                              _editedProduct = Book(
-                                  title: _editedProduct.title,
+                              _editedBook = Book(
+                                  title: _editedBook.title,
                                   grade: value,
-                                  subject: _editedProduct.subject,
-                                  description: _editedProduct.description,
-                                  pages: _editedProduct.pages,
-                                  editor: _editedProduct.editor,
-                                  publisher: _editedProduct.publisher,
-                                  imageUrl: _editedProduct.imageUrl,
-                                  id: _editedProduct.id,
-                                  isFavorite: _editedProduct.isFavorite);
+                                  subject: _editedBook.subject,
+                                  description: _editedBook.description,
+                                  pages: _editedBook.pages,
+                                  editor: _editedBook.editor,
+                                  publisher: _editedBook.publisher,
+                                  imageUrl: _editedBook.imageUrl,
+                                  id: _editedBook.id,
+                                  isFavorite: _editedBook.isFavorite);
                             },
                           ),
                           // UQM
@@ -263,17 +262,17 @@ class _EditBookScreenState extends State<EditBookScreen> {
                               });
                             },
                             onSaved: (value) {
-                              _editedProduct = Book(
-                                  title: _editedProduct.title,
-                                  grade: _editedProduct.grade,
+                              _editedBook = Book(
+                                  title: _editedBook.title,
+                                  grade: _editedBook.grade,
                                   subject: value,
-                                  description: _editedProduct.description,
-                                  pages: _editedProduct.pages,
-                                  editor: _editedProduct.editor,
-                                  publisher: _editedProduct.publisher,
-                                  imageUrl: _editedProduct.imageUrl,
-                                  id: _editedProduct.id,
-                                  isFavorite: _editedProduct.isFavorite);
+                                  description: _editedBook.description,
+                                  pages: _editedBook.pages,
+                                  editor: _editedBook.editor,
+                                  publisher: _editedBook.publisher,
+                                  imageUrl: _editedBook.imageUrl,
+                                  id: _editedBook.id,
+                                  isFavorite: _editedBook.isFavorite);
                             },
                           ),
                         ),
@@ -307,17 +306,17 @@ class _EditBookScreenState extends State<EditBookScreen> {
                               return null;
                             },
                             onSaved: (value) {
-                              _editedProduct = Book(
-                                title: _editedProduct.title,
-                                grade: _editedProduct.grade,
-                                subject: _editedProduct.subject,
-                                description: _editedProduct.description,
+                              _editedBook = Book(
+                                title: _editedBook.title,
+                                grade: _editedBook.grade,
+                                subject: _editedBook.subject,
+                                description: _editedBook.description,
                                 pages: int.parse(value),
-                                editor: _editedProduct.editor,
-                                publisher: _editedProduct.publisher,
-                                imageUrl: _editedProduct.imageUrl,
-                                id: _editedProduct.id,
-                                isFavorite: _editedProduct.isFavorite,
+                                editor: _editedBook.editor,
+                                publisher: _editedBook.publisher,
+                                imageUrl: _editedBook.imageUrl,
+                                id: _editedBook.id,
+                                isFavorite: _editedBook.isFavorite,
                               );
                             },
                           ),
@@ -342,17 +341,17 @@ class _EditBookScreenState extends State<EditBookScreen> {
                               return null;
                             },
                             onSaved: (value) {
-                              _editedProduct = Book(
-                                title: _editedProduct.title,
-                                grade: _editedProduct.grade,
-                                subject: _editedProduct.subject,
-                                description: _editedProduct.description,
-                                pages: _editedProduct.pages,
+                              _editedBook = Book(
+                                title: _editedBook.title,
+                                grade: _editedBook.grade,
+                                subject: _editedBook.subject,
+                                description: _editedBook.description,
+                                pages: _editedBook.pages,
                                 editor: value,
-                                publisher: _editedProduct.publisher,
-                                imageUrl: _editedProduct.imageUrl,
-                                id: _editedProduct.id,
-                                isFavorite: _editedProduct.isFavorite,
+                                publisher: _editedBook.publisher,
+                                imageUrl: _editedBook.imageUrl,
+                                id: _editedBook.id,
+                                isFavorite: _editedBook.isFavorite,
                               );
                             },
                           ),
@@ -382,17 +381,17 @@ class _EditBookScreenState extends State<EditBookScreen> {
                         return null;
                       },
                       onSaved: (value) {
-                        _editedProduct = Book(
-                          title: _editedProduct.title,
-                          grade: _editedProduct.grade,
-                          subject: _editedProduct.subject,
-                          description: _editedProduct.description,
-                          pages: _editedProduct.pages,
-                          editor: _editedProduct.editor,
+                        _editedBook = Book(
+                          title: _editedBook.title,
+                          grade: _editedBook.grade,
+                          subject: _editedBook.subject,
+                          description: _editedBook.description,
+                          pages: _editedBook.pages,
+                          editor: _editedBook.editor,
                           publisher: value,
-                          imageUrl: _editedProduct.imageUrl,
-                          id: _editedProduct.id,
-                          isFavorite: _editedProduct.isFavorite,
+                          imageUrl: _editedBook.imageUrl,
+                          id: _editedBook.id,
+                          isFavorite: _editedBook.isFavorite,
                         );
                       },
                     ),
@@ -411,17 +410,17 @@ class _EditBookScreenState extends State<EditBookScreen> {
                         return null;
                       },
                       onSaved: (value) {
-                        _editedProduct = Book(
+                        _editedBook = Book(
                             title: value,
-                            grade: _editedProduct.grade,
-                            subject: _editedProduct.subject,
-                            description: _editedProduct.description,
-                            pages: _editedProduct.pages,
-                            editor: _editedProduct.editor,
-                            publisher: _editedProduct.publisher,
-                            imageUrl: _editedProduct.imageUrl,
-                            id: _editedProduct.id,
-                            isFavorite: _editedProduct.isFavorite);
+                            grade: _editedBook.grade,
+                            subject: _editedBook.subject,
+                            description: _editedBook.description,
+                            pages: _editedBook.pages,
+                            editor: _editedBook.editor,
+                            publisher: _editedBook.publisher,
+                            imageUrl: _editedBook.imageUrl,
+                            id: _editedBook.id,
+                            isFavorite: _editedBook.isFavorite);
                       },
                     ),
                     // Price
@@ -449,17 +448,17 @@ class _EditBookScreenState extends State<EditBookScreen> {
                         return null;
                       },
                       onSaved: (value) {
-                        _editedProduct = Book(
-                          title: _editedProduct.title,
-                          grade: _editedProduct.grade,
-                          subject: _editedProduct.subject,
+                        _editedBook = Book(
+                          title: _editedBook.title,
+                          grade: _editedBook.grade,
+                          subject: _editedBook.subject,
                           description: value,
-                          pages: _editedProduct.pages,
-                          editor: _editedProduct.editor,
-                          publisher: _editedProduct.publisher,
-                          imageUrl: _editedProduct.imageUrl,
-                          id: _editedProduct.id,
-                          isFavorite: _editedProduct.isFavorite,
+                          pages: _editedBook.pages,
+                          editor: _editedBook.editor,
+                          publisher: _editedBook.publisher,
+                          imageUrl: _editedBook.imageUrl,
+                          id: _editedBook.id,
+                          isFavorite: _editedBook.isFavorite,
                         );
                       },
                     ),
@@ -515,17 +514,17 @@ class _EditBookScreenState extends State<EditBookScreen> {
                               return null;
                             },
                             onSaved: (value) {
-                              _editedProduct = Book(
-                                title: _editedProduct.title,
-                                grade: _editedProduct.grade,
-                                subject: _editedProduct.subject,
-                                description: _editedProduct.description,
-                                pages: _editedProduct.pages,
-                                editor: _editedProduct.editor,
-                                publisher: _editedProduct.publisher,
+                              _editedBook = Book(
+                                title: _editedBook.title,
+                                grade: _editedBook.grade,
+                                subject: _editedBook.subject,
+                                description: _editedBook.description,
+                                pages: _editedBook.pages,
+                                editor: _editedBook.editor,
+                                publisher: _editedBook.publisher,
                                 imageUrl: value,
-                                id: _editedProduct.id,
-                                isFavorite: _editedProduct.isFavorite,
+                                id: _editedBook.id,
+                                isFavorite: _editedBook.isFavorite,
                               );
                             },
                           ),

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../data/constants.dart';
-import '../providers/auth.dart';
-import '../screens/edit_book.dart';
-import '../providers/books.dart';
-import '../widgets/app_drawer.dart';
-import '../widgets/books_grid.dart';
-import '../widgets/badge.dart';
-import '../providers/cart.dart';
-import 'cart_screen.dart';
+import '../../data/constants.dart';
+import '../../providers/auth.dart';
+import '../edit/edit_book.dart';
+import '../../providers/books.dart';
+import '../../widgets/app_drawer.dart';
+import '../../widgets/books_grid.dart';
+import '../../widgets/badge.dart';
+import '../../providers/cart.dart';
+import '../cart_screen.dart';
 
 enum FilterOptions {
   Favorites,
@@ -17,7 +17,7 @@ enum FilterOptions {
 }
 
 class ProductsOverviewScreen extends StatefulWidget {
-  static const routeName = '/overview';
+  static const routeName = '/books';
 
   @override
   _ProductsOverviewScreenState createState() => _ProductsOverviewScreenState();
@@ -29,6 +29,7 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
   @override
   Widget build(BuildContext context) {
     final authData = Provider.of<Auth>(context, listen: false);
+    final booksData = Provider.of<Books>(context, listen: false);
 
     return Scaffold(
       appBar: AppBar(
@@ -109,15 +110,10 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
         ],
       ),
       drawer: AppDrawer(),
-      body:
-          //_isLoading
-          //     ? Center(
-          //         child: CircularProgressIndicator(),
-          //       )
-          //   :
-          FutureBuilder(
-              future: Provider.of<Books>(context, listen: false)
-                  .fetchAndSetProducts(authData.currentUser.id),
+      body: booksData.items.isNotEmpty
+          ? ProductsGrid(_showOnlyFavorites)
+          : FutureBuilder(
+              future: booksData.fetchAndSetBooks(authData.currentUser.id),
               builder: (ctx, dataSnapshot) {
                 if (dataSnapshot.connectionState == ConnectionState.waiting) {
                   return Center(
@@ -136,18 +132,6 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
               onPressed: () {
                 Navigator.of(context).pushNamed(EditBookScreen.routeName);
               },
-              //  () async {
-              //   final snapshot =
-              //       await FirebaseFirestore.instance.collection('videos').get();
-              //   snapshot.docs.forEach((doc) => {print(doc.get('title'))});
-              //   video.
-              //   .snapshots()
-              //   .listen((data) {
-              // data.docs.forEach((element) {
-              //   print(element.get('title'));
-              // }
-              //    )
-              // },
             )
           : Container(),
     );

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:tuto/providers/auth.dart';
+import '../providers/auth.dart';
 
 import '../widgets/auth/auth_form.dart';
 
