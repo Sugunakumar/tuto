@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tuto/models/models.dart';
 
-import '../models/task.dart';
 import '../data/constants.dart';
 
 class Tasks with ChangeNotifier {
@@ -46,53 +46,53 @@ class Tasks with ChangeNotifier {
     }
   }
 
-  Future<void> add(Task item) async {
-    final newItem = {
-      'name': item.name,
-      'createdById': item.createdById,
-      'assignedToId': item.assignedToId,
-    };
+  // Future<void> add(Task item) async {
+  //   final newItem = {
+  //     'name': item.name,
+  //     'createdById': item.createdById,
+  //     'assignedToId': item.assignedToId,
+  //   };
 
-    try {
-      final taskCollection = FirebaseFirestore.instance.collection(taskTable);
+  //   try {
+  //     final taskCollection = FirebaseFirestore.instance.collection(taskTable);
 
-      final addedItem = await taskCollection.add(newItem);
+  //     final addedItem = await taskCollection.add(newItem);
 
-      final newItemList = Task(
-        id: addedItem.id,
-        name: item.name,
-        createdById: item.createdById,
-        assignedToId: item.assignedToId,
-      );
+  //     final newItemList = Task(
+  //       id: addedItem.id,
+  //       name: item.name,
+  //       createdById: item.createdById,
+  //       assignedToId: item.assignedToId,
+  //     );
 
-      _items.insert(0, newItemList);
+  //     _items.insert(0, newItemList);
 
-      notifyListeners();
-    } catch (e) {
-      print(e);
-      throw e;
-    }
-  }
+  //     notifyListeners();
+  //   } catch (e) {
+  //     print(e);
+  //     throw e;
+  //   }
+  // }
 
-  Future<void> update(String id, Task newItem) async {
-    final itemIndex = _items.indexWhere((item) => item.id == id);
-    if (itemIndex >= 0) {
-      try {
-        await FirebaseFirestore.instance.collection(taskTable).doc(id).update({
-          'name': newItem.name,
-          'createdById': newItem.createdById,
-          'assignedToId': newItem.assignedToId,
-        });
-        _items[itemIndex] = newItem;
-        notifyListeners();
-      } catch (e) {
-        print(e);
-        throw e;
-      }
-    } else {
-      print('No such item with id : ' + id);
-    }
-  }
+  // Future<void> update(String id, Task newItem) async {
+  //   final itemIndex = _items.indexWhere((item) => item.id == id);
+  //   if (itemIndex >= 0) {
+  //     try {
+  //       await FirebaseFirestore.instance.collection(taskTable).doc(id).update({
+  //         'name': newItem.name,
+  //         'createdById': newItem.createdById,
+  //         'assignedToId': newItem.assignedToId,
+  //       });
+  //       _items[itemIndex] = newItem;
+  //       notifyListeners();
+  //     } catch (e) {
+  //       print(e);
+  //       throw e;
+  //     }
+  //   } else {
+  //     print('No such item with id : ' + id);
+  //   }
+  // }
 
   Future<void> delete(String id) async {
     final existingItemIndex = _items.indexWhere((i) => i.id == id);

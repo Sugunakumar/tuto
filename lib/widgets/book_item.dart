@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../data/constants.dart';
 import '../providers/auth.dart';
 import '../screens/edit/edit_book.dart';
-import '../screens/overview/book_chapters.dart';
+import '../screens/profile/book_profile.dart';
 import '../providers/cart.dart';
 import './../models/book.dart';
 
@@ -30,7 +30,7 @@ class BookItem extends StatelessWidget {
         child: GestureDetector(
           onTap: () {
             Navigator.of(context).pushNamed(
-              BookDetailScreen.routeName,
+              BookProfile.routeName,
               arguments: book.id,
             );
           },
@@ -48,7 +48,7 @@ class BookItem extends StatelessWidget {
               ),
               color: Theme.of(context).accentColor,
               onPressed: () {
-                book.toggleFavoriteStatus(authData.currentUser.id);
+                book.toggleFavoriteStatus(authData.currentMember.id);
               },
             ),
           ),

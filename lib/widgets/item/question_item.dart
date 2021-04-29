@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:provider/provider.dart';
-import '../models/question.dart';
+import 'package:tuto/models/models.dart';
 
 class QuestionItem extends StatelessWidget {
   final bool showOnlyQuestions;

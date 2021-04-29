@@ -7,7 +7,6 @@ import 'package:tuto/screens/overview/home_page.dart';
 import '../../data/constants.dart';
 import '../../providers/auth.dart';
 
-import '../../providers/schools.dart';
 import '../../widgets/app_drawer.dart';
 
 class SchoolOverviewScreen extends StatefulWidget {
@@ -20,7 +19,7 @@ class SchoolOverviewScreen extends StatefulWidget {
 class _SchoolOverviewScreenState extends State<SchoolOverviewScreen> {
   @override
   Widget build(BuildContext context) {
-    final schoolsData = Provider.of<Schools>(context, listen: false);
+    final schoolsData = Provider.of<SchoolsModel>(context, listen: false);
 
     return Scaffold(
       appBar: AppBar(
@@ -65,7 +64,7 @@ class SchoolsList extends StatefulWidget {
 class _SchoolsListState extends State<SchoolsList> {
   @override
   Widget build(BuildContext context) {
-    return Consumer<Schools>(builder: (ctx, allItems, _) {
+    return Consumer<SchoolsModel>(builder: (ctx, allItems, _) {
       final schools = allItems.items;
 
       return ListView.builder(
@@ -107,7 +106,7 @@ class SchoolItem extends StatelessWidget {
                   icon: Icon(Icons.delete),
                   onPressed: () async {
                     try {
-                      await Provider.of<Schools>(context, listen: false)
+                      await Provider.of<SchoolsModel>(context, listen: false)
                           .delete(school.id);
                     } catch (e) {
                       scaffold.showSnackBar(

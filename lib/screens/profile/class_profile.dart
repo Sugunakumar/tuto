@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/class.dart';
+import 'package:tuto/screens/edit/edit_book.dart';
 
-import '../../models/class.dart';
-import '../../models/user.dart';
+import 'package:tuto/widgets/list/class_books_list.dart';
 
 import '../../providers/auth.dart';
-import '../../providers/classes.dart';
-import '../../providers/students.dart';
-import '../../providers/tasks.dart';
-
-import '../../widgets/students_list.dart';
 
 Class loadedClass;
-Students studentsData;
-Tasks tasksData;
+// Tasks tasksData;
 Auth authProvider;
-Classes classesData;
 
 class ClassProfile extends StatefulWidget {
   static const routeName = '/class-profile';
@@ -48,13 +43,29 @@ class _ClassProfileState extends State<ClassProfile>
 
   @override
   Widget build(BuildContext context) {
-    final classId = ModalRoute.of(context).settings.arguments as String;
-    print("classId : " + classId);
+    // loadedClass = ModalRoute.of(context).settings.arguments as Class;
+    // print("classId : " + loadedClass.name);
 
-    classesData = Provider.of<Classes>(context, listen: false);
-    loadedClass = classesData.findById(classId);
-    studentsData = Provider.of<Students>(context, listen: false);
-    tasksData = Provider.of<Tasks>(context, listen: false);
+    //final classId = ModalRoute.of(context).settings.arguments as String;
+    //print("classId : " + classId);
+
+    //final schoolsData = Provider.of<SchoolNotifier>(context, listen: false);
+    //loadedClass = schoolsData.loadClassById(classId);
+
+    loadedClass = context.watch<ClassNotifier>().clazz;
+    //loadedClass = Provider.of<ClassNotifier>(context, listen: false).clazz;
+    print("loadedClass.name : " + loadedClass.name);
+
+    // final loadedSchool =
+    //     Provider.of<ClassNotifier>(context, listen: false).school;
+    // print("loadedSchool.name : " + loadedSchool.name);
+
+    // schoolProvider = Provider.of<SchoolProvider>(context, listen: false);
+    // loadedClass = schoolProvider.findClassById(classId);
+    // classProvider = Provider.of<ClassProvider>(context, listen: false);
+    // classProvider.clazz = loadedClass;
+
+    //tasksData = Provider.of<Tasks>(context, listen: false);
     authProvider = Provider.of<Auth>(context, listen: false);
 
     return SafeArea(
@@ -66,8 +77,8 @@ class _ClassProfileState extends State<ClassProfile>
             bottom: TabBar(
               controller: _tabController,
               tabs: [
+                Tab(child: Text("Books")),
                 Tab(child: Text("Students")),
-                Tab(child: Text("Subjects")),
               ],
             ),
             title: Text(loadedClass.name),
@@ -75,12 +86,12 @@ class _ClassProfileState extends State<ClassProfile>
           body: TabBarView(
             controller: _tabController,
             children: [
-              StudentsTab(),
+              ClassBookListTab(loadedClass),
+              //SubjectsTab(),
               Center(
-                child: Container(
-                  child: Text("Menu Page"),
-                ),
+                child: Text('Students'),
               ),
+              //StudentsTab(),
               //TabList(),
             ],
           ),
@@ -101,6 +112,17 @@ class _ClassProfileState extends State<ClassProfile>
   Widget _bottomButtons() {
     if (_tabController.index == 0) {
       return FloatingActionButton(
+        shape: StadiumBorder(),
+        onPressed: () {
+          print('books & subjects');
+          Navigator.of(context).pushNamed(EditBookScreen.routeName);
+        },
+        child: Icon(
+          Icons.add,
+        ),
+      );
+    } else if (_tabController.index == 1) {
+      return FloatingActionButton(
           shape: StadiumBorder(),
           onPressed: () async {
             print('students');
@@ -110,17 +132,6 @@ class _ClassProfileState extends State<ClassProfile>
           child: Icon(
             Icons.add,
           ));
-    } else if (_tabController.index == 1) {
-      return FloatingActionButton(
-        shape: StadiumBorder(),
-        onPressed: () {
-          print('subjects');
-          //Navigator.of(context).pushNamed(EditClassScreen.routeName),
-        },
-        child: Icon(
-          Icons.add,
-        ),
-      );
     } else
       return null;
   }
@@ -158,9 +169,8 @@ class _AddDialogWidgetState extends State<AddDialogWidget> {
           '  isAdmin : ' +
           _isAdmin.toString());
 
-      CurrentUser addedUser =
-          await authProvider.fetchUserByEmail(_teacherEmail);
-      await studentsData.add(addedUser);
+      Member addedUser = await authProvider.fetchUserByEmail(_teacherEmail);
+      //await loadedClass.addStudent(addedUser);
       //await loadedSchool.addTeacher(addedUser);
     } catch (e) {
       await showDialog<Null>(
@@ -256,34 +266,98 @@ class _AddDialogWidgetState extends State<AddDialogWidget> {
   }
 }
 
-class StudentsTab extends StatelessWidget {
-  const StudentsTab({Key key}) : super(key: key);
+// class StudentsTab extends StatelessWidget {
+//   const StudentsTab({Key key}) : super(key: key);
 
-  Future<void> _refresh(BuildContext context) async {
-    await studentsData.fetchAndSet(classesData.schoolId, loadedClass.id);
-  }
+//   Future<void> _refresh(BuildContext context) async {
+//     await classProvider.fetchAndSetStudents();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () => _refresh(context),
-      child: studentsData.items.isEmpty
-          ? FutureBuilder(
-              future: _refresh(context),
-              builder: (ctx, dataSnapshot) {
-                if (dataSnapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: CircularProgressIndicator(),
-                  );
-                } else if (dataSnapshot.error != null) {
-                  // Error handling
-                  print(dataSnapshot.error.toString());
-                  return Center(child: Text('An Error occured'));
-                } else {
-                  return StudentsList();
-                }
-              })
-          : StudentsList(),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return RefreshIndicator(
+//       onRefresh: () => _refresh(context),
+//       child: classProvider.students.isEmpty
+//           ? FutureBuilder(
+//               future: _refresh(context),
+//               builder: (ctx, dataSnapshot) {
+//                 if (dataSnapshot.connectionState == ConnectionState.waiting) {
+//                   return Center(
+//                     child: CircularProgressIndicator(),
+//                   );
+//                 } else if (dataSnapshot.error != null) {
+//                   // Error handling
+//                   print(dataSnapshot.error.toString());
+//                   return Center(child: Text('An Error occured'));
+//                 } else {
+//                   return StudentsList();
+//                 }
+//               })
+//           : StudentsList(),
+//     );
+//   }
+// }
+
+// class SubjectsTab extends StatelessWidget {
+//   const SubjectsTab({Key key}) : super(key: key);
+
+//   Future<void> _refresh(BuildContext context) async {
+//     await classProvider.fetchAndSetBooks();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return RefreshIndicator(
+//       onRefresh: () => _refresh(context),
+//       child: classProvider.books.isEmpty
+//           ? FutureBuilder(
+//               future: _refresh(context),
+//               builder: (ctx, dataSnapshot) {
+//                 if (dataSnapshot.connectionState == ConnectionState.waiting) {
+//                   return Center(
+//                     child: CircularProgressIndicator(),
+//                   );
+//                 } else if (dataSnapshot.error != null) {
+//                   // Error handling
+//                   print(dataSnapshot.error.toString());
+//                   return Center(child: Text('An Error occured'));
+//                 } else {
+//                   return BookListTab(belongsToClass: true);
+//                 }
+//               })
+//           : BookListTab(belongsToClass: true),
+//     );
+//   }
+// }
+
+// class BookTab extends StatelessWidget {
+//   const BookTab({Key key}) : super(key: key);
+
+//   Future<void> _refresh(BuildContext context) async {
+//     await classProvider.fetchAndSetSubjects();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return RefreshIndicator(
+//       onRefresh: () => _refresh(context),
+//       child: classProvider.subjects.isEmpty
+//           ? FutureBuilder(
+//               future: _refresh(context),
+//               builder: (ctx, dataSnapshot) {
+//                 if (dataSnapshot.connectionState == ConnectionState.waiting) {
+//                   return Center(
+//                     child: CircularProgressIndicator(),
+//                   );
+//                 } else if (dataSnapshot.error != null) {
+//                   // Error handling
+//                   print(dataSnapshot.error.toString());
+//                   return Center(child: Text('An Error occured'));
+//                 } else {
+//                   return SubjectsList();
+//                 }
+//               })
+//           : SubjectsList(),
+//     );
+//   }
+// }

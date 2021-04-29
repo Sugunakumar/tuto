@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tuto/models/user.dart';
+import 'package:tuto/models/models.dart';
+
+import 'package:tuto/new_providers/school.dart';
+import 'package:tuto/new_providers/schools.dart';
 import 'package:tuto/providers/auth.dart';
+import 'package:tuto/screens/edit/edit_teacher.dart';
+import 'package:tuto/widgets/list/teachers_list.dart';
 
 import '../../screens/edit/edit_class.dart';
 import '../../screens/edit/edit_school.dart';
-
-import '../../models/school.dart';
-import '../../providers/classes.dart';
-import '../../providers/schools.dart';
-import '../../providers/tasks.dart';
-import '../../providers/teachers.dart';
-import '../../widgets/classes_list.dart';
-import '../../widgets/teachers_list.dart';
+import '../../widgets/list/classes_list.dart';
 
 School loadedSchool;
-Schools schoolsData;
-Classes classesData;
-Teachers teachersData;
-Tasks tasksData;
+//SchoolsModel schoolsData;
+//ClassModel classModel;
+//SchoolProvider schoolData;
+//Teachers teachersData;
+//Tasks tasksData;
 Auth authProvider;
 
 class SchoolProfile extends StatefulWidget {
@@ -52,16 +51,28 @@ class _SchoolProfileState extends State<SchoolProfile>
 
   @override
   Widget build(BuildContext context) {
-    final schoolId = ModalRoute.of(context).settings.arguments as String;
-    print("schoolId : " + schoolId);
+    // final schoolId = ModalRoute.of(context).settings.arguments as String;
+    // print("schoolId : " + schoolId);
 
-    schoolsData = Provider.of<Schools>(context, listen: false);
-    loadedSchool = schoolsData.findById(schoolId);
+    // final schoolsData = Provider.of<Schools>(context, listen: false);
+    // loadedSchool = schoolsData.findById(schoolId);
+
+    loadedSchool = context.watch<SchoolNotifier>().school;
+    print("loadedSchool.name : " + loadedSchool.name);
+
+    //loadedSchool = schoolsData.loadSchoolById(schoolId);
+    //classModel = Provider.of<ClassModel>(context, listen: false);
+    //classModel.fetchAndSetClasses(loadedSchool);
+    //schoolData = Provider.of<SchoolProvider>(context);
+    //loadedSchool = schoolData.schools.findById(schoolId);
+    //schoolData.school = loadedSchool;
+    //loadedSchool = schoolsData.findById(schoolId);
+
+    ///schoolData.schoolId = schoolId;
+    //teachersData = Provider.of<Teachers>(context);
+    //tasksData = Provider.of<Tasks>(context, listen: false);
+
     authProvider = Provider.of<Auth>(context, listen: false);
-    classesData = Provider.of<Classes>(context);
-    classesData.schoolId = schoolId;
-    teachersData = Provider.of<Teachers>(context);
-    tasksData = Provider.of<Tasks>(context, listen: false);
 
     return SafeArea(
       top: false,
@@ -72,8 +83,8 @@ class _SchoolProfileState extends State<SchoolProfile>
             bottom: TabBar(
               controller: _tabController,
               tabs: [
-                Tab(child: Text("Teachers")),
                 Tab(child: Text("Classes")),
+                Tab(child: Text("Teachers")),
               ],
             ),
             title: Text(loadedSchool.name),
@@ -82,7 +93,7 @@ class _SchoolProfileState extends State<SchoolProfile>
                 icon: const Icon(Icons.search),
                 onPressed: () {
                   Navigator.of(context).pushNamed(EditSchoolScreen.routeName,
-                      arguments: schoolId);
+                      arguments: loadedSchool.id);
                 },
               ),
               // IconButton(
@@ -120,8 +131,9 @@ class _SchoolProfileState extends State<SchoolProfile>
           body: TabBarView(
             controller: _tabController,
             children: [
-              TeachersTab(),
-              ClassesTab(),
+              ClassesTab(loadedSchool),
+              TeachersTab(loadedSchool),
+              // TeachersTab(),
               //TabList(),
             ],
           ),
@@ -139,16 +151,16 @@ class _SchoolProfileState extends State<SchoolProfile>
     );
   }
 
-  getPage(int page) {
-    switch (page) {
-      case 0:
-        return ProfileTab();
-      case 1:
-        return TeachersTab();
-      case 2:
-        return ClassesTab();
-    }
-  }
+  // getPage(int page) {
+  //   switch (page) {
+  //     case 0:
+  //       return ProfileTab();
+  //     case 1:
+  //       return TeachersTab();
+  //     case 2:
+  //       return ClassesTab();
+  //   }
+  // }
 
   Future<void> addTeacherByEmailDialog(BuildContext context) async {
     await showDialog(
@@ -161,16 +173,6 @@ class _SchoolProfileState extends State<SchoolProfile>
   Widget _bottomButtons() {
     if (_tabController.index == 0) {
       return FloatingActionButton(
-          shape: StadiumBorder(),
-          onPressed: () async {
-            await addTeacherByEmailDialog(context);
-            //Navigator.of(context).pushNamed(EditTeacherScreen.routeName),
-          },
-          child: Icon(
-            Icons.add,
-          ));
-    } else if (_tabController.index == 1) {
-      return FloatingActionButton(
         shape: StadiumBorder(),
         onPressed: () => {
           Navigator.of(context).pushNamed(EditClassScreen.routeName),
@@ -179,6 +181,17 @@ class _SchoolProfileState extends State<SchoolProfile>
           Icons.add,
         ),
       );
+    } else if (_tabController.index == 1) {
+      return FloatingActionButton(
+          shape: StadiumBorder(),
+          onPressed: () async {
+            print('floating action button');
+            await addTeacherByEmailDialog(context);
+            //Navigator.of(context).pushNamed(EditTeacherScreen.routeName),
+          },
+          child: Icon(
+            Icons.add,
+          ));
     } else
       return null;
   }
@@ -195,10 +208,9 @@ class AddDialogWidget extends StatefulWidget {
 
 class _AddDialogWidgetState extends State<AddDialogWidget> {
   final _form = GlobalKey<FormState>();
-
+  bool _isAdmin = false;
   var _isLoading = false;
   var _teacherEmail = '';
-  var _isAdmin = false;
 
   Future<void> _saveForm() async {
     final isValid = _form.currentState.validate();
@@ -211,14 +223,9 @@ class _AddDialogWidgetState extends State<AddDialogWidget> {
     });
 
     try {
-      print("_teacherEmail : " +
-          _teacherEmail +
-          '  isAdmin : ' +
-          _isAdmin.toString());
-
-      CurrentUser addedUser =
-          await authProvider.fetchUserByEmail(_teacherEmail);
-      await teachersData.add(addedUser);
+      Member addedUser = await authProvider.fetchUserByEmail(_teacherEmail);
+      await context.read<SchoolNotifier>().addTeacher(addedUser, _isAdmin);
+      //await schoolData.addTeacher(addedUser);
       //await loadedSchool.addTeacher(addedUser);
     } catch (e) {
       await showDialog<Null>(
@@ -251,6 +258,8 @@ class _AddDialogWidgetState extends State<AddDialogWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isAdmin = context.watch<Auth>().isAdmin();
+
     return _isLoading
         ? Center(
             child: CircularProgressIndicator(),
@@ -280,19 +289,22 @@ class _AddDialogWidgetState extends State<AddDialogWidget> {
                       _teacherEmail = value;
                     },
                   ),
-                  // Row(
-                  //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  //   children: [
-                  //     Text("Is Admin ?"),
-                  //     Checkbox(
-                  //         value: _isAdmin,
-                  //         onChanged: (checked) {
-                  //           setState(() {
-                  //             _isAdmin = checked;
-                  //           });
-                  //         })
-                  //   ],
-                  // )
+                  isAdmin
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Is Admin ?"),
+                            Checkbox(
+                                value: _isAdmin,
+                                onChanged: (checked) {
+                                  setState(() {
+                                    _isAdmin = checked;
+                                    print('_isAdmin  ' + _isAdmin.toString());
+                                  });
+                                })
+                          ],
+                        )
+                      : Container(),
                 ],
               ),
             ),
@@ -314,212 +326,37 @@ class _AddDialogWidgetState extends State<AddDialogWidget> {
   }
 }
 
-class ProfileTab extends StatelessWidget {
-  const ProfileTab({Key key}) : super(key: key);
+// class TeachersTab extends StatelessWidget {
+//   const TeachersTab({Key key}) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Stack(
-        children: <Widget>[
-          SizedBox(
-            height: 250,
-            width: double.infinity,
-            child: FittedBox(
-              child: Image.network(
-                loadedSchool.imageURL,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          Container(
-            margin: EdgeInsets.fromLTRB(16.0, 200.0, 16.0, 16.0),
-            child: Column(
-              children: <Widget>[
-                Stack(
-                  children: <Widget>[
-                    Container(
-                      padding: EdgeInsets.all(16.0),
-                      margin: EdgeInsets.only(top: 16.0),
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(5.0)),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Container(
-                            margin: EdgeInsets.only(left: 96.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(loadedSchool.name,
-                                    style:
-                                        Theme.of(context).textTheme.headline6),
-                                ListTile(
-                                  contentPadding: EdgeInsets.all(0),
-                                  title: Text(loadedSchool.board),
-                                  subtitle: Text(loadedSchool.address),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 10.0),
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: Column(
-                                  children: <Widget>[
-                                    Text("285"),
-                                    Text("Likes")
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  children: <Widget>[
-                                    Text("3025"),
-                                    Text("Comments")
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  children: <Widget>[
-                                    Text("650"),
-                                    Text("Favourites")
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      height: 80,
-                      width: 80,
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10.0),
-                          image: DecorationImage(
-                              image: NetworkImage(loadedSchool.imageURL),
-                              fit: BoxFit.cover)),
-                      margin: EdgeInsets.only(left: 16.0),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20.0),
-                //ProfileCategories(),
-                //SchoolEntity(),
-                SizedBox(height: 20.0),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(5.0),
-                  ),
-                  child: Column(
-                    children: <Widget>[
-                      ListTile(
-                        title: Text("User information"),
-                      ),
-                      Divider(),
-                      ListTile(
-                        title: Text("Email"),
-                        subtitle: Text("butterfly.little@gmail.com"),
-                        leading: Icon(Icons.email),
-                      ),
-                      ListTile(
-                        title: Text("Phone"),
-                        subtitle: Text("+977-9815225566"),
-                        leading: Icon(Icons.phone),
-                      ),
-                      ListTile(
-                        title: Text("Website"),
-                        subtitle: Text("https://www.littlebutterfly.com"),
-                        leading: Icon(Icons.web),
-                      ),
-                      ListTile(
-                        title: Text("About"),
-                        subtitle: Text(
-                            "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Nulla, illo repellendus quas beatae reprehenderit nemo, debitis explicabo officiis sit aut obcaecati iusto porro? Exercitationem illum consequuntur magnam eveniet delectus ab."),
-                        leading: Icon(Icons.person),
-                      ),
-                      ListTile(
-                        title: Text("Joined Date"),
-                        subtitle: Text("15 February 2019"),
-                        leading: Icon(Icons.calendar_view_day),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // AppBar(
-          //   backgroundColor: Colors.transparent,
-          //   elevation: 0,
-          // )
-        ],
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     Future<void> _refresh(BuildContext context) async {
+//       await schoolData.fetchAndSetTeachers();
+//     }
 
-class ClassesTab extends StatelessWidget {
-  const ClassesTab({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return classesData.items.isEmpty
-        ? FutureBuilder(
-            future: classesData.fetchAndSet(),
-            builder: (ctx, dataSnapshot) {
-              if (dataSnapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: CircularProgressIndicator(),
-                );
-              } else if (dataSnapshot.error != null) {
-                // Error handling
-                print(dataSnapshot.error.toString());
-                return Center(child: Text('An Error occured'));
-              } else {
-                return ClassesList(entityItems: classesData.items);
-              }
-            })
-        : ClassesList(entityItems: classesData.items);
-  }
-}
-
-class TeachersTab extends StatelessWidget {
-  const TeachersTab({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    Future<void> _refresh(BuildContext context) async {
-      await teachersData.fetchAndSet(loadedSchool.id);
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => _refresh(context),
-      child: teachersData.items.isEmpty
-          ? FutureBuilder(
-              future: _refresh(context),
-              builder: (ctx, dataSnapshot) {
-                if (dataSnapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: CircularProgressIndicator(),
-                  );
-                } else if (dataSnapshot.error != null) {
-                  // Error handling
-                  print(dataSnapshot.error.toString());
-                  return Center(child: Text('An Error occured'));
-                } else {
-                  return TeachersList();
-                }
-              })
-          : TeachersList(),
-    );
-  }
-}
+//     return RefreshIndicator(
+//       onRefresh: () => _refresh(context),
+//       child: schoolData.teachers.isEmpty
+//           ? FutureBuilder(
+//               future: _refresh(context),
+//               builder: (ctx, dataSnapshot) {
+//                 if (dataSnapshot.connectionState == ConnectionState.waiting) {
+//                   return Center(
+//                     child: CircularProgressIndicator(),
+//                   );
+//                 } else if (dataSnapshot.error != null) {
+//                   // Error handling
+//                   print(dataSnapshot.error.toString());
+//                   return Center(child: Text('An Error occured'));
+//                 } else {
+//                   return TeachersList();
+//                 }
+//               })
+//           : TeachersList(),
+//     );
+//   }
+// }
 
 class AnimatedBottomNav extends StatelessWidget {
   final int currentIndex;

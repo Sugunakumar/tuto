@@ -15,6 +15,7 @@ class BoxImagePicker extends StatefulWidget {
 class _BoxImagePickerState extends State<BoxImagePicker> {
   File _pickedImage;
   void _pickImage() async {
+    //Navigator.of(context).pop();
     final picker = ImagePicker();
     final pickedImage = await picker.getImage(
       source: ImageSource.camera,

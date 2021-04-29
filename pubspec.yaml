@@ -35,6 +35,10 @@ dependencies:
   html_unescape: ^1.0.1+2
   auto_size_text: ^2.0.0+2
   autocomplete_textfield: ^1.7.3
+  path_provider: ^1.6.27
+  path: ^1.7.0
+  filter_list: ^0.0.6
+
   # flutter_typeahead: ^2.0.0
   # cloud_firestore: 0.13.5
 

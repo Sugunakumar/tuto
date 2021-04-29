@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:tuto/models/task.dart';
+import 'package:tuto/new_providers/task.dart';
 
 class HomeWork extends Task {
   final String homeworkImageURL;

@@ -4,15 +4,16 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tuto/models/school.dart';
 
-import '../models/school.dart';
 import '../data/constants.dart';
 
-class Schools with ChangeNotifier {
-  final schoolTable = tables['schools'];
-  final chapterTable = tables['chapters'];
-  final classesTable = tables['classes'];
+// List<Class> classes = [];
+// List<Task> tasks = [];
+// List<Teacher> teachers = [];
+// List<Admin> admin = [];
 
+class SchoolsModel {
   final db = FirebaseFirestore.instance;
 
   List<School> _items = [];
@@ -28,7 +29,7 @@ class Schools with ChangeNotifier {
   Future<void> fetchAndSet() async {
     final List<School> loaded = [];
     try {
-      final snapshot = await db.collection(schoolTable).get();
+      final snapshot = await db.collection(School.tableName).get();
       if (snapshot.size == 0) {
         print("fetchAndSetSchools : No schools to display");
         _items = loaded;
@@ -63,23 +64,19 @@ class Schools with ChangeNotifier {
 
         loaded.add(
           School(
-              id: doc.id,
-              name: doc.get('name'),
-              address: doc.get('address'),
-              board: doc.get('board'),
-              imageURL: doc.get('imageURL'),
-              email: doc.data().containsKey('email') ? doc.get('email') : null,
-              phone: doc.data().containsKey('phone') ? doc.get('phone') : null,
-              role: isAdmin
-                  ? Role.Admin
-                  : isTeacher
-                      ? Role.Teacher
-                      : isStudent ? Role.Student : Role.Individual),
+            id: doc.id,
+            name: doc.get('name'),
+            address: doc.get('address'),
+            board: doc.get('board'),
+            imageURL: doc.get('imageURL'),
+            email: doc.data().containsKey('email') ? doc.get('email') : null,
+            phone: doc.data().containsKey('phone') ? doc.get('phone') : null,
+          ),
         );
       });
 
       _items = loaded;
-      notifyListeners();
+      //notifyListeners();
     } catch (e) {
       print(e.toString());
       throw (e);
@@ -98,7 +95,7 @@ class Schools with ChangeNotifier {
 
     try {
       final schoolCollection =
-          FirebaseFirestore.instance.collection(schoolTable);
+          FirebaseFirestore.instance.collection(School.tableName);
 
       final addedItem = await schoolCollection.add(newItem);
 
@@ -130,7 +127,7 @@ class Schools with ChangeNotifier {
 
       _items.insert(0, newItemList);
 
-      notifyListeners();
+      //notifyListeners();
     } catch (e) {
       print(e);
       throw e;
@@ -142,7 +139,7 @@ class Schools with ChangeNotifier {
     if (itemIndex >= 0) {
       try {
         await FirebaseFirestore.instance
-            .collection(schoolTable)
+            .collection(School.tableName)
             .doc(id)
             .update({
           'name': newItem.name,
@@ -153,7 +150,7 @@ class Schools with ChangeNotifier {
           'phone': newItem.phone,
         });
         _items[itemIndex] = newItem;
-        notifyListeners();
+        //notifyListeners();
       } catch (e) {
         print(e);
         throw e;
@@ -167,14 +164,17 @@ class Schools with ChangeNotifier {
     final existingItemIndex = _items.indexWhere((i) => i.id == id);
     var existingItem = _items[existingItemIndex];
     _items.removeAt(existingItemIndex);
-    notifyListeners();
+    //notifyListeners();
 
     try {
-      await FirebaseFirestore.instance.collection(schoolTable).doc(id).delete();
+      await FirebaseFirestore.instance
+          .collection(School.tableName)
+          .doc(id)
+          .delete();
       existingItem = null;
     } catch (e) {
       _items.insert(existingItemIndex, existingItem);
-      notifyListeners();
+      //notifyListeners();
       throw e;
     }
   }

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:autocomplete_textfield/autocomplete_textfield.dart';
 
-import '../../models/book.dart';
-import '../../providers/books.dart';
+import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/book.dart';
+import 'package:tuto/new_providers/class.dart';
+
+import '../../common/utils.dart';
 import '../../data/constants.dart';
 
 class EditBookScreen extends StatefulWidget {
@@ -21,6 +25,12 @@ class _EditBookScreenState extends State<EditBookScreen> {
   final _uqmFocusNode = FocusNode();
   final _descriptionFocusNode = FocusNode();
   final _imageUrlController = TextEditingController();
+
+  GlobalKey autoCompletionKey =
+      new GlobalKey<AutoCompleteTextFieldState<Book>>();
+
+  List<Book> availableBooks;
+  Book selectedBook;
 
   final _imageUrlFocusNode = FocusNode();
   final _form = GlobalKey<FormState>();
@@ -54,7 +64,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
   var _isLoading = false;
   double _totalGst;
 
-  String titleAction = "Edit Book";
+  String titleAction = "Add Book";
 
   @override
   void initState() {
@@ -66,12 +76,12 @@ class _EditBookScreenState extends State<EditBookScreen> {
   }
 
   @override
-  void didChangeDependencies() {
+  void didChangeDependencies() async {
+    final classData = Provider.of<ClassNotifier>(context, listen: false);
     if (_isInit) {
       final productId = ModalRoute.of(context).settings.arguments as String;
       if (productId != null) {
-        _editedBook =
-            Provider.of<Books>(context, listen: false).findBookById(productId);
+        _editedBook = classData.findBookById(productId);
         _initValues = {
           'grade': _editedBook.grade,
           'subject': _editedBook.subject,
@@ -83,8 +93,11 @@ class _EditBookScreenState extends State<EditBookScreen> {
           'imageUrl': _editedBook.imageUrl,
         };
         _imageUrlController.text = _editedBook.imageUrl;
-      } else
-        titleAction = "Add Book";
+        titleAction = "Edit Book";
+      }
+      await classData.fetchAndSetAllBooks();
+      availableBooks = classData.allBooks;
+      print("availableBooks.length : " + availableBooks.length.toString());
     }
     _isInit = false;
     super.didChangeDependencies();
@@ -147,11 +160,12 @@ class _EditBookScreenState extends State<EditBookScreen> {
       _isLoading = true;
     });
     if (_editedBook.id != null) {
-      await Provider.of<Books>(context, listen: false)
+      await Provider.of<ClassNotifier>(context, listen: false)
           .updateBook(_editedBook.id, _editedBook);
     } else {
       try {
-        await Provider.of<Books>(context, listen: false).addBook(_editedBook);
+        await Provider.of<ClassNotifier>(context, listen: false)
+            .addBook(_editedBook);
       } catch (e) {
         await showDialog<Null>(
             context: context,
@@ -229,16 +243,17 @@ class _EditBookScreenState extends State<EditBookScreen> {
                             },
                             onSaved: (value) {
                               _editedBook = Book(
-                                  title: _editedBook.title,
-                                  grade: value,
-                                  subject: _editedBook.subject,
-                                  description: _editedBook.description,
-                                  pages: _editedBook.pages,
-                                  editor: _editedBook.editor,
-                                  publisher: _editedBook.publisher,
-                                  imageUrl: _editedBook.imageUrl,
-                                  id: _editedBook.id,
-                                  isFavorite: _editedBook.isFavorite);
+                                title: _editedBook.title,
+                                grade: value,
+                                subject: _editedBook.subject,
+                                description: _editedBook.description,
+                                pages: _editedBook.pages,
+                                editor: _editedBook.editor,
+                                publisher: _editedBook.publisher,
+                                imageUrl: _editedBook.imageUrl,
+                                id: _editedBook.id,
+                                //isFavorite: _editedBook.isFavorite
+                              );
                             },
                           ),
                           // UQM
@@ -263,16 +278,17 @@ class _EditBookScreenState extends State<EditBookScreen> {
                             },
                             onSaved: (value) {
                               _editedBook = Book(
-                                  title: _editedBook.title,
-                                  grade: _editedBook.grade,
-                                  subject: value,
-                                  description: _editedBook.description,
-                                  pages: _editedBook.pages,
-                                  editor: _editedBook.editor,
-                                  publisher: _editedBook.publisher,
-                                  imageUrl: _editedBook.imageUrl,
-                                  id: _editedBook.id,
-                                  isFavorite: _editedBook.isFavorite);
+                                title: _editedBook.title,
+                                grade: _editedBook.grade,
+                                subject: value,
+                                description: _editedBook.description,
+                                pages: _editedBook.pages,
+                                editor: _editedBook.editor,
+                                publisher: _editedBook.publisher,
+                                imageUrl: _editedBook.imageUrl,
+                                id: _editedBook.id,
+                                //isFavorite: _editedBook.isFavorite
+                              );
                             },
                           ),
                         ),
@@ -316,7 +332,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                                 publisher: _editedBook.publisher,
                                 imageUrl: _editedBook.imageUrl,
                                 id: _editedBook.id,
-                                isFavorite: _editedBook.isFavorite,
+                                //isFavorite: _editedBook.isFavorite,
                               );
                             },
                           ),
@@ -351,7 +367,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                                 publisher: _editedBook.publisher,
                                 imageUrl: _editedBook.imageUrl,
                                 id: _editedBook.id,
-                                isFavorite: _editedBook.isFavorite,
+                                //isFavorite: _editedBook.isFavorite,
                               );
                             },
                           ),
@@ -391,10 +407,76 @@ class _EditBookScreenState extends State<EditBookScreen> {
                           publisher: value,
                           imageUrl: _editedBook.imageUrl,
                           id: _editedBook.id,
-                          isFavorite: _editedBook.isFavorite,
+                          //isFavorite: _editedBook.isFavorite,
                         );
                       },
                     ),
+
+                    new Column(children: [
+                      new Container(
+                        child: new AutoCompleteTextField<Book>(
+                          decoration: new InputDecoration(
+                              hintText: "Search Book",
+                              suffixIcon: new Icon(Icons.search)),
+                          itemSubmitted: (item) {
+                            setState(() => selectedBook = item);
+                            _editedBook = Book(
+                              title: _editedBook.title,
+                              grade: _editedBook.grade,
+                              subject: _editedBook.subject,
+                              description: _editedBook.description,
+                              pages: _editedBook.pages,
+                              editor: _editedBook.editor,
+                              publisher: _editedBook.publisher,
+                              imageUrl: _editedBook.imageUrl,
+                              id: selectedBook.id,
+                            );
+                          },
+                          key: autoCompletionKey,
+                          suggestions: availableBooks,
+                          itemBuilder: (context, suggestion) => new Padding(
+                              child: new ListTile(
+                                leading: (suggestion.imageUrl ?? "").isEmpty
+                                    ? CircleAvatar(
+                                        backgroundImage:
+                                            NetworkImage(suggestion.imageUrl),
+                                      )
+                                    : CircleAvatar(
+                                        child: Text(suggestion.title.image),
+                                      ),
+                                title: new Text(suggestion.title),
+                                //trailing: new Text("Stars: ${suggestion.stars}")),
+                              ),
+                              padding: EdgeInsets.all(8.0)),
+                          itemSorter: (a, b) => 0,
+                          itemFilter: (suggestion, input) => suggestion.title
+                              .toLowerCase()
+                              .startsWith(input.toLowerCase()),
+                        ),
+                      ),
+                      new Padding(
+                          padding: EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
+                          child: new Card(
+                              child: selectedBook != null
+                                  ? new Column(children: [
+                                      new ListTile(
+                                        leading: (selectedBook.imageUrl ?? "")
+                                                .isEmpty
+                                            ? CircleAvatar(
+                                                child: Text(
+                                                    selectedBook.title.image),
+                                              )
+                                            : CircleAvatar(
+                                                backgroundImage: NetworkImage(
+                                                    selectedBook.imageUrl),
+                                              ),
+                                        title: new Text(selectedBook.title),
+                                        //trailing: new Text("Stars: ${selected.stars}")),
+                                      ),
+                                    ])
+                                  : new Icon(Icons.cancel))),
+                    ]),
+
                     // Title
                     TextFormField(
                       initialValue: _initValues['title'],
@@ -411,16 +493,17 @@ class _EditBookScreenState extends State<EditBookScreen> {
                       },
                       onSaved: (value) {
                         _editedBook = Book(
-                            title: value,
-                            grade: _editedBook.grade,
-                            subject: _editedBook.subject,
-                            description: _editedBook.description,
-                            pages: _editedBook.pages,
-                            editor: _editedBook.editor,
-                            publisher: _editedBook.publisher,
-                            imageUrl: _editedBook.imageUrl,
-                            id: _editedBook.id,
-                            isFavorite: _editedBook.isFavorite);
+                          title: value,
+                          grade: _editedBook.grade,
+                          subject: _editedBook.subject,
+                          description: _editedBook.description,
+                          pages: _editedBook.pages,
+                          editor: _editedBook.editor,
+                          publisher: _editedBook.publisher,
+                          imageUrl: _editedBook.imageUrl,
+                          id: _editedBook.id,
+                          //isFavorite: _editedBook.isFavorite,
+                        );
                       },
                     ),
                     // Price
@@ -458,7 +541,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                           publisher: _editedBook.publisher,
                           imageUrl: _editedBook.imageUrl,
                           id: _editedBook.id,
-                          isFavorite: _editedBook.isFavorite,
+                          //isFavorite: _editedBook.isFavorite,
                         );
                       },
                     ),
@@ -524,7 +607,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                                 publisher: _editedBook.publisher,
                                 imageUrl: value,
                                 id: _editedBook.id,
-                                isFavorite: _editedBook.isFavorite,
+                                //isFavorite: _editedBook.isFavorite,
                               );
                             },
                           ),

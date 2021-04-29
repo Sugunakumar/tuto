@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:autocomplete_textfield/autocomplete_textfield.dart';
-import 'package:tuto/models/teacher.dart';
-import 'package:tuto/providers/teachers.dart';
+import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/school.dart';
 
-import '../../models/class.dart';
-import '../../providers/classes.dart';
 import '../../data/constants.dart';
 
 class EditClassScreen extends StatefulWidget {
@@ -47,8 +45,8 @@ class _EditClassScreenState extends State<EditClassScreen> {
     if (_isInit) {
       final classId = ModalRoute.of(context).settings.arguments as String;
       if (classId != null) {
-        _editedClass =
-            Provider.of<Classes>(context, listen: false).findById(classId);
+        _editedClass = Provider.of<SchoolNotifier>(context, listen: false)
+            .findClassById(classId);
         _initValues = {
           'name': _editedClass.name,
           'grade': _editedClass.grade,
@@ -57,7 +55,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
         selected = _editedClass.classTeacher;
         titleAction = "Edit Class";
       }
-      teachers = Provider.of<Teachers>(context, listen: false).items;
+      teachers = Provider.of<SchoolNotifier>(context, listen: false).teachers;
     }
     _isInit = false;
     super.didChangeDependencies();
@@ -82,12 +80,13 @@ class _EditClassScreenState extends State<EditClassScreen> {
     });
     if (_editedClass.id != null) {
       print('update : ' + _editedClass.toString());
-      await Provider.of<Classes>(context, listen: false)
-          .update(_editedClass.id, _editedClass);
+      await Provider.of<SchoolNotifier>(context, listen: false)
+          .updateClass(_editedClass.id, _editedClass);
     } else {
       try {
-        print('add : ' + _editedClass.classTeacher.name);
-        await Provider.of<Classes>(context, listen: false).add(_editedClass);
+        print('add : ' + _editedClass.classTeacher.user.username);
+        await Provider.of<SchoolNotifier>(context, listen: false)
+            .addClass(_editedClass);
       } catch (e) {
         await showDialog<Null>(
             context: context,
@@ -224,22 +223,24 @@ class _EditClassScreenState extends State<EditClassScreen> {
                             suggestions: teachers,
                             itemBuilder: (context, suggestion) => new Padding(
                                 child: new ListTile(
-                                  leading: suggestion.imageURL != null ||
-                                          suggestion.imageURL == ""
+                                  leading: suggestion.user.imageURL != null ||
+                                          suggestion.user.imageURL == ""
                                       ? CircleAvatar(
-                                          backgroundImage:
-                                              NetworkImage(suggestion.imageURL),
+                                          backgroundImage: NetworkImage(
+                                              suggestion.user.imageURL),
                                         )
                                       : CircleAvatar(
-                                          child: Text(
-                                              suggestion.name[0].toUpperCase()),
+                                          child: Text(suggestion
+                                              .user.username[0]
+                                              .toUpperCase()),
                                         ),
-                                  title: new Text(suggestion.name),
+                                  title: new Text(suggestion.user.username),
                                   //trailing: new Text("Stars: ${suggestion.stars}")),
                                 ),
                                 padding: EdgeInsets.all(8.0)),
                             itemSorter: (a, b) => 0,
-                            itemFilter: (suggestion, input) => suggestion.name
+                            itemFilter: (suggestion, input) => suggestion
+                                .user.username
                                 .toLowerCase()
                                 .startsWith(input.toLowerCase()),
                           )),
@@ -250,17 +251,19 @@ class _EditClassScreenState extends State<EditClassScreen> {
                               child: selected != null
                                   ? new Column(children: [
                                       new ListTile(
-                                        leading: selected.imageURL != null ||
-                                                selected.imageURL == ""
+                                        leading: selected.user.imageURL !=
+                                                    null ||
+                                                selected.user.imageURL == ""
                                             ? CircleAvatar(
                                                 backgroundImage: NetworkImage(
-                                                    selected.imageURL),
+                                                    selected.user.imageURL),
                                               )
                                             : CircleAvatar(
-                                                child: Text(selected.name[0]
+                                                child: Text(selected
+                                                    .user.username[0]
                                                     .toUpperCase()),
                                               ),
-                                        title: new Text(selected.name),
+                                        title: new Text(selected.user.username),
                                         //trailing: new Text("Stars: ${selected.stars}")),
                                       ),
                                     ])

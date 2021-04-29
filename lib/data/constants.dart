@@ -1,3 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 const tables = {
   'books': 'products',
   'chapters': 'chapters',
@@ -9,6 +12,18 @@ const tables = {
   'teachers': 'teachers',
   'tasks': 'tasks',
 };
+
+const schoolsTableName = "schools";
+const classesTableName = "classes";
+const booksTableName = "products";
+const chaptersTableName = "chapters";
+const subjectsTableName = "subjects";
+const teachersTableName = "teachers";
+const studentsTableName = "students";
+const questionsTableName = "questions";
+const membersTableName = "users";
+
+final db = FirebaseFirestore.instance;
 
 // The subjects must be remove from here and got from DB
 

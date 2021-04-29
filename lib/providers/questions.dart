@@ -21,14 +21,6 @@ class Questions with ChangeNotifier {
     return _items.toList();
   }
 
-  // String get bookId {
-  //   return this.bookId;
-  // }
-
-  // set bookId(String id) {
-  //   this.bookId = id;
-  // }
-
   Question findQuestionsById(String id) {
     return _items.firstWhere((ques) => ques.id == id);
   }

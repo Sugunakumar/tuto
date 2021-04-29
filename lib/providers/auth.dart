@@ -4,18 +4,21 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/widgets.dart';
+import 'package:tuto/models/models.dart';
 
 import '../data/constants.dart';
-import '../models/user.dart';
 
-final usersTable = tables['users'];
+//admin@admin.com/admin/admin@123
+//five@test.com/five/welcome@123
+//six@test.com/sixtest/welcome@123
 
 class Auth with ChangeNotifier {
-  CurrentUser currentUser;
   UserCredential authResult;
 
   final db = FirebaseFirestore.instance;
+  Member _currentMember;
 
+  Member get currentMember => _currentMember;
   //String get roleAsString => currentUser.role.toString().split('.').last;
 
   bool hasAccess(Entity entity, Operations action) {
@@ -29,14 +32,22 @@ class Auth with ChangeNotifier {
     return true;
   }
 
-  Future<void> fetchCurrentUser() async {
+  User fetchCurrentUser() {
+    return FirebaseAuth.instance.currentUser;
+  }
+
+  bool isAdmin() {
+    return FirebaseAuth.instance.currentUser.email.contains('admin@admin.com');
+  }
+
+  Future<void> fetchCurrentMemeber() async {
     try {
       final userDoc = await FirebaseFirestore.instance
-          .collection(usersTable)
+          .collection(membersTableName)
           .doc(FirebaseAuth.instance.currentUser.uid)
           .get();
       print("email : " + userDoc.get("email"));
-      currentUser = CurrentUser(
+      _currentMember = Member(
         id: userDoc.id,
         email: userDoc.get("email"),
         username: userDoc.get("username"),
@@ -51,12 +62,12 @@ class Auth with ChangeNotifier {
     }
   }
 
-  Future<CurrentUser> fetchUserByEmail(String pattern) async {
+  Future<Member> fetchUserByEmail(String pattern) async {
     try {
-      CurrentUser addedUser;
+      Member addedUser;
       print("fetchUserByEmail :  " + pattern);
       final snapshot = await FirebaseFirestore.instance
-          .collection(usersTable)
+          .collection(membersTableName)
           .where('email', isEqualTo: pattern)
           .get();
 
@@ -73,7 +84,7 @@ class Auth with ChangeNotifier {
         print("email : " + doc.get("email"));
         print("username : " + doc.get("username"));
         print("image_url : " + doc.get("image_url"));
-        addedUser = CurrentUser(
+        addedUser = Member(
           id: doc.id,
           email: doc.get("email"),
           username: doc.get("username"),
@@ -110,8 +121,9 @@ class Auth with ChangeNotifier {
 
       url = await ref.getDownloadURL();
     }
+
     await FirebaseFirestore.instance
-        .collection('users')
+        .collection(membersTableName)
         .doc(authResult.user.uid)
         .set({
       'username': username,
@@ -120,7 +132,7 @@ class Auth with ChangeNotifier {
     });
 
     print('User ' + email + ' added in users table created');
-    currentUser = CurrentUser(
+    _currentMember = Member(
       id: authResult.user.uid,
       email: email,
       username: username,

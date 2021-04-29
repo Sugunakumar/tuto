@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 //import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:provider/provider.dart';
 import 'package:tuto/providers/auth.dart';
-import '../../providers/teachers.dart';
+import '../../new_providers/teachers.dart';
 
 class EditTeacherScreen extends StatefulWidget {
   static const routeName = '/add-teacher';

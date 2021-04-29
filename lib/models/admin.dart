@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:tuto/models/book.dart';
-import 'package:tuto/models/task.dart';
+import 'package:tuto/new_providers/task.dart';
 
 class Admin with ChangeNotifier {
   final String id;

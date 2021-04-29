@@ -1,33 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tuto/new_providers/book.dart';
 
 import '../../data/constants.dart';
 import '../../providers/auth.dart';
-import '../../providers/chapters.dart';
 import '../edit/edit_chapter.dart';
-import '../../widgets/chapters_list.dart';
-import '../../providers/books.dart';
+import '../../widgets/list/chapters_list.dart';
 
-class BookDetailScreen extends StatefulWidget {
+class BookProfile extends StatefulWidget {
   static const routeName = '/book-chapters';
 
   @override
-  _BookDetailScreenState createState() => _BookDetailScreenState();
+  _BookProfileState createState() => _BookProfileState();
 }
 
-class _BookDetailScreenState extends State<BookDetailScreen> {
+class _BookProfileState extends State<BookProfile> {
   @override
   Widget build(BuildContext context) {
     final authData = Provider.of<Auth>(context, listen: false);
-    final booksData = Provider.of<Books>(context, listen: false);
-    final chaptersData = Provider.of<Chapters>(context, listen: false);
+    //final booksData = Provider.of<Books>(context, listen: false);
+    //final chaptersData = Provider.of<Chapters>(context, listen: false);
 
-    final bookId =
-        ModalRoute.of(context).settings.arguments as String; // is the id!
-    print("bookId : " + bookId);
-    final loadedBook = booksData.findBookById(bookId);
+    //final loadedBook = ModalRoute.of(context).settings.arguments as Book; // is the id!
+    //print("bookId : " + bookId);
+    //final loadedBook = booksData.findBookById(bookId);
     //final chapters = loadedBook.fetchAndSetChapters(bookId);
     //print("chapters length : " + chapters.length.toString());
+
+    final bookData = Provider.of<BookNotifier>(context, listen: false);
+    final loadedBook = bookData.book;
+    print("loadedBook.name : " + loadedBook.title);
+    print("bookData.school.name : " + bookData.school.name);
+    print("bookData.clazz.name : " + bookData.clazz.name);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(loadedBook.title.toUpperCase()),
@@ -40,10 +45,10 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           ),
         ],
       ),
-      body: loadedBook.chapters.isEmpty
+      body: bookData.chapters.isEmpty
           ? FutureBuilder(
-              //future: loadedBook.fetchAndSetChapters(),
-              future: chaptersData.fetchAndSetChapters(bookId),
+              future: bookData.fetchAndSetChapters(),
+              //future: chaptersData.fetchAndSetChapters(bookId),
               builder: (ctx, dataSnapshot) {
                 if (dataSnapshot.connectionState == ConnectionState.waiting) {
                   return Center(
@@ -52,9 +57,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                 } else if (dataSnapshot.error != null) {
                   // Error handling
                   print(dataSnapshot.error.toString());
-                  return Center(child: Text('An Error occured'));
+                  return Center(child: Text('An Error occured book'));
                 } else {
-                  return ChaptersList(loadedBook);
+                  return ChaptersList(bookData.chapters);
                   // return Consumer<Chapters>(
                   //   builder: (ctx, chapterData, child) => ListView.builder(
                   //     itemCount: chapterData.chapters.length,
@@ -66,7 +71,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   // );
                 }
               })
-          : ChaptersList(loadedBook),
+          : ChaptersList(bookData.chapters),
       floatingActionButton: authData.hasAccess(Entity.Chapter, Operations.Add)
           ? FloatingActionButton(
               child: Icon(Icons.add),

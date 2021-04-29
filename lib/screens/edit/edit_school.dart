@@ -2,10 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/schools.dart';
 import 'package:tuto/widgets/picker/box_image.dart';
-
-import '../../models/school.dart';
-import '../../providers/schools.dart';
 
 class EditSchoolScreen extends StatefulWidget {
   static const routeName = '/edit-school';
@@ -47,6 +46,7 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
   String titleAction = "Edit School";
 
   File _imageFile;
+
   void _pickedImage(File image) {
     _imageFile = image;
   }
@@ -101,6 +101,7 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
         await Provider.of<Schools>(context, listen: false)
             .add(_edited, _imageFile);
       } catch (e) {
+        print('exception: ' + e.toString());
         await showDialog<Null>(
             context: context,
             builder: (ctx) => AlertDialog(

@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import '../models/question.dart';
 
 class Chapter with ChangeNotifier {
+  static final String tableName = 'chapters';
+
   final String id;
   final int index;
   final String title;

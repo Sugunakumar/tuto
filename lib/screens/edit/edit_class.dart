@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:autocomplete_textfield/autocomplete_textfield.dart';
-import 'package:tuto/models/teacher.dart';
-import 'package:tuto/providers/teachers.dart';
+import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/school.dart';
 
-import '../../models/class.dart';
-import '../../providers/classes.dart';
 import '../../data/constants.dart';
 
 class EditClassScreen extends StatefulWidget {
@@ -21,8 +19,8 @@ class _EditClassScreenState extends State<EditClassScreen> {
   final _classTeacherNode = FocusNode();
 
   final _form = GlobalKey<FormState>();
+  final _key = new GlobalKey<AutoCompleteTextFieldState<Teacher>>();
 
-  GlobalKey key = new GlobalKey<AutoCompleteTextFieldState<Teacher>>();
   Teacher selected;
   List<Teacher> teachers;
 
@@ -43,12 +41,12 @@ class _EditClassScreenState extends State<EditClassScreen> {
   String titleAction = "Add Class";
 
   @override
-  void didChangeDependencies() {
+  void didChangeDependencies() async {
+    final schoolData = Provider.of<SchoolNotifier>(context, listen: false);
     if (_isInit) {
       final classId = ModalRoute.of(context).settings.arguments as String;
       if (classId != null) {
-        _editedClass =
-            Provider.of<Classes>(context, listen: false).findById(classId);
+        _editedClass = schoolData.findClassById(classId);
         _initValues = {
           'name': _editedClass.name,
           'grade': _editedClass.grade,
@@ -57,7 +55,17 @@ class _EditClassScreenState extends State<EditClassScreen> {
         selected = _editedClass.classTeacher;
         titleAction = "Edit Class";
       }
-      teachers = Provider.of<Teachers>(context, listen: false).items;
+
+      teachers = schoolData.teachers;
+      if (teachers.isEmpty) {
+        await schoolData.fetchAndSetTeachers();
+        setState(() {
+          teachers = schoolData.teachers;
+        });
+
+        print('fetchAndSetTeachers called in editclass : ' +
+            teachers.length.toString());
+      }
     }
     _isInit = false;
     super.didChangeDependencies();
@@ -82,12 +90,13 @@ class _EditClassScreenState extends State<EditClassScreen> {
     });
     if (_editedClass.id != null) {
       print('update : ' + _editedClass.toString());
-      await Provider.of<Classes>(context, listen: false)
-          .update(_editedClass.id, _editedClass);
+      await Provider.of<SchoolNotifier>(context, listen: false)
+          .updateClass(_editedClass.id, _editedClass);
     } else {
       try {
-        print('add : ' + _editedClass.classTeacher.name);
-        await Provider.of<Classes>(context, listen: false).add(_editedClass);
+        print('add : ' + _editedClass.classTeacher.user.username);
+        await Provider.of<SchoolNotifier>(context, listen: false)
+            .addClass(_editedClass);
       } catch (e) {
         await showDialog<Null>(
             context: context,
@@ -122,6 +131,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print("teachers.length : " + teachers.length.toString());
     return Scaffold(
       appBar: AppBar(
         title: Text(titleAction),
@@ -204,63 +214,65 @@ class _EditClassScreenState extends State<EditClassScreen> {
                     ),
 
                     new Column(children: [
+                      new Container(
+                        child: new AutoCompleteTextField<Teacher>(
+                          decoration: new InputDecoration(
+                              hintText: "Search Class Teacher",
+                              suffixIcon: new Icon(Icons.search)),
+                          itemSubmitted: (item) {
+                            setState(() => selected = item);
+                            //selected = item;
+                            _editedClass = Class(
+                              name: _editedClass.name,
+                              grade: _editedClass.grade,
+                              id: _editedClass.id,
+                              classTeacher: selected,
+                            );
+                          },
+                          key: _key,
+                          suggestions: teachers,
+                          itemBuilder: (context, suggestion) => new Padding(
+                              child: new ListTile(
+                                leading: suggestion.user.imageURL != null ||
+                                        suggestion.user.imageURL == ""
+                                    ? CircleAvatar(
+                                        backgroundImage: NetworkImage(
+                                            suggestion.user.imageURL),
+                                      )
+                                    : CircleAvatar(
+                                        child: Text(suggestion.user.username[0]
+                                            .toUpperCase()),
+                                      ),
+                                title: new Text(suggestion.user.username),
+                                //trailing: new Text("Stars: ${suggestion.stars}")),
+                              ),
+                              padding: EdgeInsets.all(8.0)),
+                          itemSorter: (a, b) => 0,
+                          itemFilter: (suggestion, input) => suggestion
+                              .user.username
+                              .toLowerCase()
+                              .startsWith(input.toLowerCase()),
+                        ),
+                      ),
                       new Padding(
-                          child: new Container(
-                              child: new AutoCompleteTextField<Teacher>(
-                            decoration: new InputDecoration(
-                                hintText: "Search Teacher :",
-                                suffixIcon: new Icon(Icons.search)),
-                            itemSubmitted: (item) {
-                              //setState(() => selected = item);
-                              selected = item;
-                              _editedClass = Class(
-                                name: _editedClass.name,
-                                grade: _editedClass.grade,
-                                id: _editedClass.id,
-                                classTeacher: selected,
-                              );
-                            },
-                            key: key,
-                            suggestions: teachers,
-                            itemBuilder: (context, suggestion) => new Padding(
-                                child: new ListTile(
-                                  leading: suggestion.imageURL != null ||
-                                          suggestion.imageURL == ""
-                                      ? CircleAvatar(
-                                          backgroundImage:
-                                              NetworkImage(suggestion.imageURL),
-                                        )
-                                      : CircleAvatar(
-                                          child: Text(
-                                              suggestion.name[0].toUpperCase()),
-                                        ),
-                                  title: new Text(suggestion.name),
-                                  //trailing: new Text("Stars: ${suggestion.stars}")),
-                                ),
-                                padding: EdgeInsets.all(8.0)),
-                            itemSorter: (a, b) => 0,
-                            itemFilter: (suggestion, input) => suggestion.name
-                                .toLowerCase()
-                                .startsWith(input.toLowerCase()),
-                          )),
-                          padding: EdgeInsets.all(16.0)),
-                      new Padding(
-                          padding: EdgeInsets.fromLTRB(0.0, 64.0, 0.0, 0.0),
+                          padding: EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
                           child: new Card(
                               child: selected != null
                                   ? new Column(children: [
                                       new ListTile(
-                                        leading: selected.imageURL != null ||
-                                                selected.imageURL == ""
+                                        leading: selected.user.imageURL !=
+                                                    null ||
+                                                selected.user.imageURL == ""
                                             ? CircleAvatar(
                                                 backgroundImage: NetworkImage(
-                                                    selected.imageURL),
+                                                    selected.user.imageURL),
                                               )
                                             : CircleAvatar(
-                                                child: Text(selected.name[0]
+                                                child: Text(selected
+                                                    .user.username[0]
                                                     .toUpperCase()),
                                               ),
-                                        title: new Text(selected.name),
+                                        title: new Text(selected.user.username),
                                         //trailing: new Text("Stars: ${selected.stars}")),
                                       ),
                                     ])
@@ -274,7 +286,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
                     //     : Container(),
 
                     RaisedButton(
-                      child: Text('Submit'),
+                      child: Text('Add Class'),
                       onPressed: () {
                         _saveForm();
                       },

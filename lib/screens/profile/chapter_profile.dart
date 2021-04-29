@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tuto/new_providers/chapter.dart';
 
 import '../../data/constants.dart';
 import '../../providers/auth.dart';
-import '../../widgets/questions_list.dart';
+import '../../widgets/list/questions_list.dart';
 import '../../providers/chapters.dart';
 import '../../providers/questions.dart';
 import '../edit/edit_question.dart';
@@ -13,25 +14,29 @@ enum FilterOptions {
   WithAnswers,
 }
 
-class ChapterDetailScreen extends StatefulWidget {
+class ChapterProfile extends StatefulWidget {
   static const routeName = '/chapter-questions';
 
   @override
-  _ChapterDetailScreenState createState() => _ChapterDetailScreenState();
+  _ChapterProfileState createState() => _ChapterProfileState();
 }
 
-class _ChapterDetailScreenState extends State<ChapterDetailScreen> {
+class _ChapterProfileState extends State<ChapterProfile> {
   var _showOnlyQuestions = false;
   @override
   Widget build(BuildContext context) {
-    final chapterId = ModalRoute.of(context).settings.arguments as String;
+    // final loadedChapter = ModalRoute.of(context).settings.arguments as Chapter;
 
-    print("chapterId : " + chapterId);
+    // print("chapter title: " + loadedChapter.title);
 
     final authData = Provider.of<Auth>(context, listen: false);
-    final chaptersData = Provider.of<Chapters>(context, listen: false);
-    final questionsData = Provider.of<Questions>(context, listen: false);
-    final loadedChapter = chaptersData.findChapterById(chapterId);
+    // final chaptersData = Provider.of<Chapters>(context, listen: false);
+    // final questionsData = Provider.of<Questions>(context, listen: false);
+    // final loadedChapter = chaptersData.findChapterById(chapterId);
+
+    final chapterData = Provider.of<ChapterNotifier>(context, listen: false);
+    final loadedChapter = chapterData.book;
+    print("loadedBook.name : " + loadedChapter.title);
 
     return Scaffold(
       appBar: AppBar(
@@ -69,10 +74,9 @@ class _ChapterDetailScreenState extends State<ChapterDetailScreen> {
           ),
         ],
       ),
-      body: loadedChapter.questions.isEmpty
+      body: chapterData.questions.isEmpty
           ? FutureBuilder(
-              future: questionsData.fetchAndSetQuestion(
-                  chaptersData.bookId, chapterId),
+              future: chapterData.fetchAndSetQuestion(),
               builder: (ctx, dataSnapshot) {
                 if (dataSnapshot.connectionState == ConnectionState.waiting) {
                   return Center(
@@ -83,10 +87,11 @@ class _ChapterDetailScreenState extends State<ChapterDetailScreen> {
                   print(dataSnapshot.error.toString());
                   return Center(child: Text('An Error occured'));
                 } else {
-                  return QuestionsList(loadedChapter, _showOnlyQuestions);
+                  return QuestionsList(
+                      chapterData.questions, _showOnlyQuestions);
                 }
               })
-          : QuestionsList(loadedChapter, _showOnlyQuestions),
+          : QuestionsList(chapterData.questions, _showOnlyQuestions),
       floatingActionButton: authData.hasAccess(Entity.Question, Operations.Add)
           ? FloatingActionButton(
               child: Icon(Icons.add),
