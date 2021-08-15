@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/models.dart';
 import 'package:tuto/new_providers/book.dart';
 import 'package:tuto/new_providers/class.dart';
 
@@ -45,49 +45,24 @@ class _ArticleDescription extends StatelessWidget {
                 '$subtitle',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 13.0,
-                  color: Colors.black54,
-                ),
+                // style: const TextStyle(
+                //   fontSize: 13.0,
+                //   color: Colors.black54,
+                // ),
               ),
-            ],
-          ),
-        ),
-        Expanded(
-          flex: 1,
-          child: Row(
-            //crossAxisAlignment: CrossAxisAlignment.end, // top to bottom
-            mainAxisAlignment: MainAxisAlignment.spaceBetween, // left to right
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start, // left to right
-                mainAxisAlignment: MainAxisAlignment.end, // top to bottom
-                children: <Widget>[
-                  Text(
-                    '$author',
-                    style: const TextStyle(
-                      fontSize: 12.0,
-                      //color: Colors.black87,
-                    ),
-                  ),
-                  Text(
-                    '$publishDate - $readDuration',
-                    style: const TextStyle(
-                      fontSize: 12.0,
-                      //color: Colors.black54,
-                    ),
-                  ),
-                ],
+              Text(
+                '$author',
+                // style: const TextStyle(
+                //   fontSize: 12.0,
+                //   //color: Colors.black87,
+                // ),
               ),
-              Row(
-                children: <Widget>[
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      print('edit was clicked');
-                    },
-                  ),
-                ],
+              Text(
+                '$publishDate - $readDuration',
+                // style: const TextStyle(
+                //   fontSize: 12.0,
+                //   //color: Colors.black54,
+                // ),
               ),
             ],
           ),
@@ -127,8 +102,8 @@ class CustomListItemTwo extends StatelessWidget {
             //     context.read<ClassNotifier>().school;
             // context.read<BookNotifier>().clazz =
             //     context.read<ClassNotifier>().clazz;
-            context.read<BookNotifier>().book = book;
-            Navigator.of(context).pushNamed(BookProfile.routeName);
+            //context.read<BookNotifier>().book = book;
+            //Navigator.of(context).pushNamed(BookProfile.routeName);
           },
           // Generally, material cards use onSurface with 12% opacity for the pressed state.
           splashColor:

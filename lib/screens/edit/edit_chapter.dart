@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../models/chapter.dart';
-import '../../providers/chapters.dart';
+import 'package:tuto/new_providers/book.dart';
+import 'package:tuto/new_providers/chapter.dart';
 
 class EditChapterScreen extends StatefulWidget {
   static const routeName = '/edit-chapter';
@@ -35,7 +34,7 @@ class _EditChapterScreenState extends State<EditChapterScreen> {
     if (_isInit) {
       final chapterId = ModalRoute.of(context).settings.arguments as String;
       if (chapterId != null) {
-        _editedChapter = Provider.of<Chapters>(context, listen: false)
+        _editedChapter = Provider.of<Book>(context, listen: false)
             .findChapterById(chapterId);
         _initValues = {
           'index': _editedChapter.index.toString(),
@@ -65,11 +64,11 @@ class _EditChapterScreenState extends State<EditChapterScreen> {
       _isLoading = true;
     });
     if (_editedChapter.id != null) {
-      await Provider.of<Chapters>(context, listen: false)
+      await Provider.of<Book>(context, listen: false)
           .updateChapter(_editedChapter.id, _editedChapter);
     } else {
       try {
-        await Provider.of<Chapters>(context, listen: false)
+        await Provider.of<Book>(context, listen: false)
             .addChapter(_editedChapter);
       } catch (e) {
         await showDialog<Null>(

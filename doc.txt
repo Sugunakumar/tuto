@@ -1,0 +1,45 @@
+task - one to one/more
+
+homework - one to all in the class
+class
+subject
+book
+chatper
+page number
+description - text
+ answers papers[]
+ studentID
+ totalmarks
+ remarks
+
+
+exam - one to all in a class
+exam 
+class
+subject
+books []
+ syllabus - text
+description
+datetime
+question paper
+answer paper []
+ studentID
+ screenshot
+ marks[for each questions]
+ totalmarks
+ remarks
+
+questionpaper
+    questions[]
+
+
+progress cards
+exam timetable - calendar
+
+export application screen to pdf
+https://stackoverflow.com/questions/61563860/export-flutter-application-screen-to-pdf
+
+Todo:
+clean up
+
+

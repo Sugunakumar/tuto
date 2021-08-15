@@ -1,74 +1,123 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:autocomplete_textfield/autocomplete_textfield.dart';
-import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/class.dart';
+import 'package:tuto/new_providers/classTeacher.dart';
+import 'package:tuto/new_providers/member.dart';
 import 'package:tuto/new_providers/school.dart';
+import 'package:tuto/new_providers/schoolTeacher.dart';
+import 'package:tuto/new_providers/schools.dart';
+import 'package:tuto/providers/auth.dart';
+import 'package:tuto/screens/profile/school_profile.dart';
 
 import '../../data/constants.dart';
 
 class EditClassScreen extends StatefulWidget {
-  static const routeName = '/edit-class';
+  static const routeName = '/add-class';
 
   @override
   _EditClassScreenState createState() => _EditClassScreenState();
 }
 
 class _EditClassScreenState extends State<EditClassScreen> {
+  Future<void> _refreshPage(BuildContext context) async {
+    await Provider.of<Auth>(context, listen: false).fetchAndSetMembers();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<Auth>();
+
+    print("auth.members.length : " + auth.members.length.toString());
+
+    return RefreshIndicator(
+      onRefresh: () => _refreshPage(context),
+      child: auth.members.isNotEmpty
+          ? EditClassForm(auth)
+          : FutureBuilder(
+              future: _refreshPage(context),
+              builder: (ctx, dataSnapshot) {
+                if (dataSnapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (dataSnapshot.error != null) {
+                  // Error handling
+                  return Center(child: Text('An Error occured'));
+                } else {
+                  return EditClassForm(auth);
+                }
+              },
+            ),
+    );
+  }
+}
+
+class EditClassForm extends StatefulWidget {
+  final Auth auth;
+  EditClassForm(this.auth, {Key key}) : super(key: key);
+
+  @override
+  _EditClassFormState createState() => _EditClassFormState();
+}
+
+class _EditClassFormState extends State<EditClassForm> {
   final _nameFocusNode = FocusNode();
+  final _iconFocusNode = FocusNode();
   final _gradeFocusNode = FocusNode();
   final _classTeacherNode = FocusNode();
 
   final _form = GlobalKey<FormState>();
-  final _key = new GlobalKey<AutoCompleteTextFieldState<Teacher>>();
-
-  Teacher selected;
-  List<Teacher> teachers;
+  final _key = new GlobalKey<AutoCompleteTextFieldState<SchoolTeacher>>();
 
   var _editedClass = Class(
     id: null,
     name: '',
-    grade: '',
+    icon: '',
+    grade: null,
+    academicYear: '',
     classTeacher: null,
   );
 
   var _initValues = {
     'name': '',
+    'icon': '',
     'grade': null,
-    'classTeacher': Teacher,
+    'academicYear': DateTime.now().year.toString(),
+    'classTeacherEmail': '',
   };
+
+  School _school;
   var _isInit = true;
   var _isLoading = false;
   String titleAction = "Add Class";
+  SchoolTeacher selected;
+
+  //static String _displayStringForOption(Member member) => member.username;
 
   @override
-  void didChangeDependencies() async {
-    final schoolData = Provider.of<SchoolNotifier>(context, listen: false);
+  void didChangeDependencies() {
     if (_isInit) {
+      final schoolId = SchoolProfile.schoolId;
+      _school = Provider.of<Schools>(context, listen: false).findById(schoolId);
+
       final classId = ModalRoute.of(context).settings.arguments as String;
       if (classId != null) {
-        _editedClass = schoolData.findClassById(classId);
+        _editedClass = _school.findClassById(classId);
         _initValues = {
           'name': _editedClass.name,
-          'grade': _editedClass.grade,
-          'classTeacher': _editedClass.classTeacher,
+          'icon': _editedClass.icon,
+          'grade': _editedClass.grade.toString().split('.').last,
+          'academicYear': _editedClass.academicYear,
+          'classTeacherEmail': _editedClass.classTeacher.user.email,
         };
-        selected = _editedClass.classTeacher;
         titleAction = "Edit Class";
       }
 
-      teachers = schoolData.teachers;
-      if (teachers.isEmpty) {
-        await schoolData.fetchAndSetTeachers();
-        setState(() {
-          teachers = schoolData.teachers;
-        });
-
-        print('fetchAndSetTeachers called in editclass : ' +
-            teachers.length.toString());
-      }
+      _isInit = false;
+      super.didChangeDependencies();
     }
-    _isInit = false;
-    super.didChangeDependencies();
   }
 
   @override
@@ -76,6 +125,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
     _nameFocusNode.dispose();
     _gradeFocusNode.dispose();
     _classTeacherNode.dispose();
+    _iconFocusNode.dispose();
     super.dispose();
   }
 
@@ -88,37 +138,11 @@ class _EditClassScreenState extends State<EditClassScreen> {
     setState(() {
       _isLoading = true;
     });
-    if (_editedClass.id != null) {
-      print('update : ' + _editedClass.toString());
-      await Provider.of<SchoolNotifier>(context, listen: false)
-          .updateClass(_editedClass.id, _editedClass);
+    if (_editedClass.id == null) {
+      _school.addClass(_editedClass);
     } else {
-      try {
-        print('add : ' + _editedClass.classTeacher.user.username);
-        await Provider.of<SchoolNotifier>(context, listen: false)
-            .addClass(_editedClass);
-      } catch (e) {
-        await showDialog<Null>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-                  title: Text('An error occured!'),
-                  content: Text('Something went wrong'),
-                  actions: [
-                    FlatButton(
-                      child: Text('Okay'),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                    )
-                  ],
-                ));
-      }
-      //  finally {
-      //   setState(() {
-      //     _isLoading = false;
-      //   });
-      //   Navigator.of(context).pop();
-      // }
+      print('update : ' + _editedClass.toString());
+      _school.updateClass(_editedClass.id, _editedClass);
     }
     setState(() {
       _isLoading = false;
@@ -127,11 +151,9 @@ class _EditClassScreenState extends State<EditClassScreen> {
   }
 
   String gradeValue;
-  String currentText = "";
 
   @override
   Widget build(BuildContext context) {
-    print("teachers.length : " + teachers.length.toString());
     return Scaffold(
       appBar: AppBar(
         title: Text(titleAction),
@@ -159,9 +181,9 @@ class _EditClassScreenState extends State<EditClassScreen> {
                       focusNode: _gradeFocusNode,
                       isExpanded: true,
                       items: grades.keys
-                          .map((grades) => DropdownMenuItem(
-                                child: Text(grades),
-                                value: grades,
+                          .map((grade) => DropdownMenuItem(
+                                child: Text(grade.toString().split('.').last),
+                                value: grade.toString().split('.').last,
                               ))
                           .toList(),
                       hint: Text('Grade'),
@@ -175,8 +197,11 @@ class _EditClassScreenState extends State<EditClassScreen> {
                       onSaved: (value) {
                         _editedClass = Class(
                           name: _editedClass.name,
-                          grade: value,
+                          icon: _editedClass.icon,
+                          grade: grades.keys.firstWhere((element) =>
+                              element.toString().split(".").last == value),
                           id: _editedClass.id,
+                          academicYear: _editedClass.academicYear,
                           classTeacher: _editedClass.classTeacher,
                         );
                       },
@@ -187,11 +212,11 @@ class _EditClassScreenState extends State<EditClassScreen> {
                     TextFormField(
                       initialValue: _initValues['name'],
                       decoration: InputDecoration(labelText: 'Name'),
-                      textInputAction: TextInputAction.done,
+                      textInputAction: TextInputAction.next,
                       keyboardType: TextInputType.text,
                       focusNode: _nameFocusNode,
                       onFieldSubmitted: (_) {
-                        _saveForm();
+                        FocusScope.of(context).requestFocus(_iconFocusNode);
                       },
                       validator: (value) {
                         if (value.isEmpty) {
@@ -202,8 +227,41 @@ class _EditClassScreenState extends State<EditClassScreen> {
                       onSaved: (value) {
                         _editedClass = Class(
                           name: value,
+                          icon: _editedClass.icon,
                           grade: _editedClass.grade,
                           id: _editedClass.id,
+                          academicYear: _editedClass.academicYear,
+                          classTeacher: _editedClass.classTeacher,
+                        );
+                      },
+                    ),
+
+                    SizedBox(
+                      height: 10.0,
+                    ),
+
+                    TextFormField(
+                      initialValue: _initValues['icon'],
+                      decoration: InputDecoration(labelText: 'Icon Name'),
+                      textInputAction: TextInputAction.next,
+                      keyboardType: TextInputType.text,
+                      focusNode: _iconFocusNode,
+                      onFieldSubmitted: (_) {
+                        _saveForm();
+                      },
+                      validator: (value) {
+                        if (value.isEmpty) {
+                          return 'Please enter icon name';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _editedClass = Class(
+                          name: _editedClass.name,
+                          icon: value,
+                          grade: _editedClass.grade,
+                          id: _editedClass.id,
+                          academicYear: _editedClass.academicYear,
                           classTeacher: _editedClass.classTeacher,
                         );
                       },
@@ -215,7 +273,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
 
                     new Column(children: [
                       new Container(
-                        child: new AutoCompleteTextField<Teacher>(
+                        child: new AutoCompleteTextField<SchoolTeacher>(
                           decoration: new InputDecoration(
                               hintText: "Search Class Teacher",
                               suffixIcon: new Icon(Icons.search)),
@@ -224,13 +282,18 @@ class _EditClassScreenState extends State<EditClassScreen> {
                             //selected = item;
                             _editedClass = Class(
                               name: _editedClass.name,
+                              icon: _editedClass.icon,
                               grade: _editedClass.grade,
+                              academicYear: _editedClass.academicYear,
                               id: _editedClass.id,
-                              classTeacher: selected,
+                              classTeacher: item,
+                              // ClassTeacher(
+                              //     joiningDate: DateTime.now(),
+                              //     schoolTeacher: item
                             );
                           },
                           key: _key,
-                          suggestions: teachers,
+                          suggestions: _school.teachers,
                           itemBuilder: (context, suggestion) => new Padding(
                               child: new ListTile(
                                 leading: suggestion.user.imageURL != null ||
@@ -285,7 +348,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
                     //       )
                     //     : Container(),
 
-                    RaisedButton(
+                    ElevatedButton(
                       child: Text('Add Class'),
                       onPressed: () {
                         _saveForm();

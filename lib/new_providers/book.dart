@@ -1,41 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/models.dart';
+import 'package:tuto/new_providers/chapter.dart';
 
 import '../data/constants.dart';
 
 final userTable = tables['users'];
 
-class BookNotifier with ChangeNotifier {
-  School _school;
-  Class _class;
-  Book _book;
-
-  set school(School newSchool) {
-    assert(newSchool != null);
-    _school = newSchool;
-    notifyListeners();
-  }
-
-  School get school => _school;
-
-  set clazz(Class newClass) {
-    assert(newClass != null);
-    _class = newClass;
-    notifyListeners();
-  }
-
-  Class get clazz => _class;
-
-  set book(Book newBook) {
-    assert(newBook != null);
-    _book = newBook;
-    notifyListeners();
-  }
-
-  Book get book => _book;
+class Book with ChangeNotifier {
+  final String id;
+  final String grade;
+  final String subject;
+  final String title;
+  final String description;
+  final int pages;
+  final String editor;
+  final String publisher;
+  final String imageUrl;
 
   List<Chapter> _chapters = [];
+
+  Book({
+    @required this.id,
+    @required this.grade,
+    @required this.subject,
+    @required this.description,
+    @required this.title,
+    @required this.pages,
+    @required this.editor,
+    @required this.publisher,
+    @required this.imageUrl,
+  });
 
   // Future<void> toggleFavoriteStatus(String userId) async {
   //   final oldStatus = isFavorite;
@@ -64,10 +59,10 @@ class BookNotifier with ChangeNotifier {
   //   }
   // }
 
-  List<Chapter> get chapters {
-    //return _chapters.toList();
-    return _chapters.where((i) => i.bookId == _book.id).toList();
-  }
+  // List<Chapter> get chapters {
+  //   //return _chapters.toList();
+  //   return _chapters.where((i) => i.bookId == _book.id).toList();
+  // }
 
   Chapter findChapterById(String id) {
     return _chapters.firstWhere((chap) => chap.id == id);
@@ -80,7 +75,7 @@ class BookNotifier with ChangeNotifier {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection(booksTableName)
-          .doc(_book.id)
+          .doc(id)
           .collection(chaptersTableName)
           .orderBy('index')
           .get();
@@ -91,7 +86,6 @@ class BookNotifier with ChangeNotifier {
       snapshot.docs.forEach((doc) {
         loadedChapters.add(
           Chapter(
-            bookId: _book.id,
             id: doc.id,
             index: doc.get('index'),
             title: doc.get('title'),
@@ -117,7 +111,7 @@ class BookNotifier with ChangeNotifier {
     try {
       final addedChapter = await FirebaseFirestore.instance
           .collection(booksTableName)
-          .doc(_book.id)
+          .doc(id)
           .collection(chaptersTableName)
           .add(newChapter);
       final newChapterList = Chapter(
@@ -140,7 +134,7 @@ class BookNotifier with ChangeNotifier {
       try {
         await FirebaseFirestore.instance
             .collection(booksTableName)
-            .doc(_book.id)
+            .doc(id)
             .collection(chaptersTableName)
             .doc(id)
             .update({
@@ -167,7 +161,7 @@ class BookNotifier with ChangeNotifier {
     try {
       await FirebaseFirestore.instance
           .collection(booksTableName)
-          .doc(_book.id)
+          .doc(id)
           .collection(chaptersTableName)
           .doc(id)
           .delete();

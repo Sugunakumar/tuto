@@ -1,35 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/class.dart';
+
 import 'package:tuto/new_providers/school.dart';
-import 'package:tuto/widgets/item/classes_item.dart';
+import 'package:tuto/providers/auth.dart';
+import 'package:tuto/widgets/item/class_item.dart';
 
 class ClassesTab extends StatelessWidget {
   final School loadedSchool;
-  ClassesTab(this.loadedSchool, {Key key}) : super(key: key);
+  final bool isSearching;
+  final String searchText;
 
-  //var classes;
+  ClassesTab(this.loadedSchool, this.isSearching, this.searchText, {Key key})
+      : super(key: key);
 
   Future<void> _refreshProducts(BuildContext context) async {
-    print('before failing class');
-    await Provider.of<SchoolNotifier>(context, listen: false)
-        .fetchAndSetClasses();
-    print('after failing');
-    //await context.watch<SchoolNotifier>().fetchAndSetClasses();
-    //classes = context.read<SchoolNotifier>().classes;
-    //await loadedSchool.fetchAndSetClasses();
+    final auth = Provider.of<Auth>(context, listen: false);
+    await this.loadedSchool.fetchAndSetClasses(auth);
   }
 
   @override
   Widget build(BuildContext context) {
-    //final loadedSchool = Provider.of<SchoolNotifier>(context, listen: false);
-    final classesData = Provider.of<SchoolNotifier>(context, listen: false);
-    //final classesData = context.watch<SchoolNotifier>();
-
     return RefreshIndicator(
       onRefresh: () => _refreshProducts(context),
-      child: classesData.classes.isEmpty
+      child: this.loadedSchool.classes.isEmpty
           ? FutureBuilder(
               future: _refreshProducts(context),
               builder: (ctx, dataSnapshot) {
@@ -42,10 +37,10 @@ class ClassesTab extends StatelessWidget {
                   print(dataSnapshot.error.toString());
                   return Center(child: Text('An Error occured'));
                 } else {
-                  return ClassesList(classesData.classes);
+                  return ClassesList(loadedSchool.classes);
                 }
               })
-          : ClassesList(classesData.classes),
+          : ClassesList(loadedSchool.classes),
     );
   }
 }
@@ -60,15 +55,11 @@ class ClassesList extends StatelessWidget {
     return entityItems.isEmpty
         ? Center(
             child: Container(
-              child: Text("Please add Classes"),
+              child: Text("Please add Teacher before creating a New class"),
             ),
           )
         : ListView.builder(
             itemCount: entityItems.length,
-            // itemBuilder: (ctx, i) => ChangeNotifierProvider.value(
-            //   value: entityItems[i],
-            //   child: ClassItem(),
-            // ),
             itemBuilder: (ctx, i) => ClassItem(entityItems[i]),
           );
   }

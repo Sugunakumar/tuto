@@ -2,68 +2,119 @@ import 'package:flutter/material.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tuto/data/constants.dart';
-import 'package:tuto/models/models.dart';
-import 'package:tuto/new_providers/members.dart';
+import 'package:tuto/new_providers/class.dart';
+import 'package:tuto/new_providers/member.dart';
+import 'package:tuto/new_providers/schoolAdmin.dart';
+import 'package:tuto/new_providers/schoolStudent.dart';
+import 'package:tuto/new_providers/schoolTeacher.dart';
+import 'package:tuto/providers/auth.dart';
 
-class SchoolNotifier with ChangeNotifier, Members {
-  School _school;
-
-  set school(School newSchool) {
-    assert(newSchool != null);
-    _school = newSchool;
-    notifyListeners();
-  }
-
-  School get school => _school;
+class School with ChangeNotifier {
+  final String id;
+  final String name;
+  final String address;
+  final String medium;
+  final String createdBy;
+  final DateTime createdAt;
+  final String board;
+  final String imageURL;
+  String email;
+  String phone;
 
   List<Class> _classes = [];
+  List<SchoolTeacher> _teachers = [];
+  List<SchoolAdmin> _admins = [];
+  List<SchoolStudent> _students = [];
 
-  List<Class> get classes {
-    //return _classes.toList();
-    return _classes.where((i) => i.schoolId == _school.id).toList();
-  }
+  School({
+    @required this.id,
+    @required this.name,
+    @required this.address,
+    @required this.board,
+    @required this.imageURL,
+    this.medium = "English",
+    this.createdBy,
+    this.createdAt,
+    this.email,
+    this.phone,
+  });
+
+  List<SchoolTeacher> get teachers => _teachers;
+  List<Class> get classes => _classes;
+  List<SchoolAdmin> get admins => _admins;
+  List<SchoolStudent> get students => _students;
 
   Class findClassById(String id) {
     return _classes.firstWhere((i) => i.id == id);
   }
 
-  Future<void> fetchAndSetClasses() async {
+  List<String> findGradesForClasses(List<Class> classes) {
+    List<String> grades = [];
+    _classes.forEach((element) {
+      grades.add(element.grade.toString().split('.').last);
+    });
+    return grades;
+  }
+
+  Future<List<Class>> fetchAndSetClasses(Auth auth) async {
     final List<Class> loaded = [];
+    var snapshot;
     try {
-      final snapshot = await db
-          .collection(schoolsTableName)
-          .doc(_school.id)
-          .collection(classesTableName)
-          .get();
+      if (auth.currentMember.roles.contains(Role.SchoolAdmin) || auth.isAdmin())
+        snapshot = await db
+            .collection(schoolsTableName)
+            .doc(this.id)
+            .collection(classesTableName)
+            .get();
+      else if (auth.currentMember.classIds != null)
+        snapshot = await db
+            .collection(schoolsTableName)
+            .doc(this.id)
+            .collection(classesTableName)
+            .where(FieldPath.documentId, whereIn: auth.currentMember.classIds)
+            .get();
+      else
+        print('to be handled');
+
       if (snapshot.size == 0) {
         _classes = loaded;
-        return;
+        return loaded;
       }
 
-      print("fetchAndSetClasss");
+      print("fetchAndSetClasss : " + snapshot.size.toString());
 
-      snapshot.docs.forEach((doc) async {
+      snapshot.docs.forEach((doc) {
         loaded.add(Class(
-          schoolId: _school.id,
-          id: doc.id,
-          name: doc.get('name'),
-          grade: doc.get('grade'),
-          classTeacher: Teacher(
-            user: Member(
-                id: doc.get('classTeacher')['userId'],
-                email: doc.get('classTeacher')['email'],
-                username: doc.get('classTeacher')['name'],
-                imageURL: doc.get('classTeacher')['imageURL']),
-          ),
-        )
-
-            //teacherId: doc.get('teacherId'),
-
-            );
+            //schoolId: _school.id,
+            id: doc.id,
+            name: doc.get('name'),
+            icon: doc.get('icon'),
+            grade: getGradeByString(doc.get('grade')),
+            academicYear: doc.get('academicYear'),
+            classTeacher: doc.data().containsKey('classTeacher')
+                ? findTeacherById(doc.get('classTeacher')['userId'])
+                : null
+            // ? ClassTeacher(
+            //     joiningDate: DateTime.parse(doc
+            //         .get('classTeacher')['joiningDate']
+            //         .toDate()
+            //         .toString()),
+            //     schoolTeacher:
+            //         findTeacherById(doc.get('classTeacher')['userId']))
+            // : null,
+            ));
       });
 
+      // for (var classId in classIds) {
+      //   final itemIndex = loaded.indexWhere((item) => item.id == classId);
+      //   loaded.insert(0, loaded.removeAt(itemIndex));
+      // }
+
       _classes = loaded;
+      print("classes set : " + _classes.length.toString());
+
       notifyListeners();
+      return loaded;
     } catch (e) {
       print(e.toString());
       throw (e);
@@ -73,35 +124,33 @@ class SchoolNotifier with ChangeNotifier, Members {
   Future<void> addClass(Class item) async {
     final newItem = {
       'name': item.name,
-      'grade': item.grade,
+      'grade': getStringByGrade(item.grade),
+      'icon': item.icon,
+      'academicYear': item.academicYear,
       'classTeacher': {
-        'userId': item.classTeacher.user.id,
-        'name': item.classTeacher.user.username,
-        'imageURL': item.classTeacher.user.imageURL,
-      }
+        'joiningDate': DateTime.now(),
+        'userId': item.classTeacher.user.id
+      },
     };
 
-    //print('classTeacher name : ' + item.classTeacher.name);
-    //print('classTeacher image : ' + item.classTeacher.imageURL);
+    print('classTeacher : ' + item.classTeacher.user.email);
 
     try {
-      final classCollection = db
-          .collection(schoolsTableName)
-          .doc(_school.id)
-          .collection(classesTableName);
+      final classCollection =
+          db.collection(schoolsTableName).doc(id).collection(classesTableName);
 
       final addedItem = await classCollection.add(newItem);
 
       final newItemList = Class(
-        schoolId: _school.id,
         id: addedItem.id,
         name: item.name,
+        icon: item.icon,
         grade: item.grade,
+        academicYear: item.academicYear,
         classTeacher: item.classTeacher,
       );
 
       _classes.insert(0, newItemList);
-
       notifyListeners();
     } catch (e) {
       print(e);
@@ -109,24 +158,20 @@ class SchoolNotifier with ChangeNotifier, Members {
     }
   }
 
-  Future<void> updateClass(String id, Class newItem) async {
+  Future<void> updateClass(String classId, Class newItem) async {
     final itemIndex = _classes.indexWhere((item) => item.id == id);
 
     if (itemIndex >= 0) {
       try {
         await db
             .collection(schoolsTableName)
-            .doc(_school.id)
-            .collection(classesTableName)
             .doc(id)
+            .collection(classesTableName)
+            .doc(classId)
             .update({
           'name': newItem.name,
           'grade': newItem.grade,
-          'classTeacher': {
-            'userId': newItem.classTeacher.user.id,
-            'name': newItem.classTeacher.user.username,
-            'imageURL': newItem.classTeacher.user.imageURL,
-          }
+          'classTeacher': newItem.classTeacher,
         });
         _classes[itemIndex] = newItem;
 
@@ -163,62 +208,64 @@ class SchoolNotifier with ChangeNotifier, Members {
 
 // ------------------------------------------------ Teachers ---------------------------------------
 
-  List<Teacher> _teachers = [];
-
-  List<Teacher> get teachers {
-    return _teachers.where((i) => i.schoolId == _school.id).toList();
+  SchoolTeacher findTeacherById(String userId) {
+    return _teachers.firstWhere((i) => i.user.id == userId, orElse: () => null);
   }
 
-  Teacher findTeacherById(String userId) {
-    return _teachers.firstWhere((i) => i.user.id == userId);
-  }
-
-  List<Teacher> findTeachersByNamePattern(String pattern) {
+  List<SchoolTeacher> findTeachersByNamePattern(String pattern) {
     return _teachers
         .where((s) =>
             s.user.username.toLowerCase().contains(pattern.toLowerCase()))
         .toList();
   }
 
-  Future<void> fetchAndSetTeachers() async {
-    final List<Teacher> loaded = [];
+  Future<void> fetchAndSetTeachers(Auth auth) async {
+    final List<SchoolTeacher> loaded = [];
     try {
-      // final schoolDoc =
-      //     await db.collection(School.tableName).doc(this.id).get();
-
-      // List<String> teachersIds = List.from(schoolDoc.get('teachers'));
-      print('teacherIds : ' + _school.teacherIds.length.toString());
-
-      if (_school.teacherIds.isEmpty) {
+      final snapshot = await db
+          .collection(schoolsTableName)
+          .doc(this.id)
+          .collection(teachersTableName)
+          .get();
+      if (snapshot.size == 0) {
+        print("fetchAndSetTeachers : No teachers to display");
+        _teachers = loaded;
         return;
       }
 
-      List<Member> membersList =
-          await findMemberInList(_school.teacherIds) as List<Member>;
+      print("fetchAndSetTeachers : " + snapshot.size.toString());
 
-      // final snapshot = await db
-      //     .collection(membersTableName)
-      //     .where(FieldPath.documentId, whereIn: _school.teacherIds)
-      //     .get();
+      List<String> userIds = [];
 
-      // if (snapshot.size == 0) {
-      //   _teachers = loaded;
-      //   print("Something wrong user not found for " +
-      //       _school.teacherIds.toString());
-      //   return;
-      // }
-      print("fetchAndSetTeachers");
+      snapshot.docs.forEach((doc) async {
+        userIds.add(doc.id);
+      });
 
-      membersList.forEach((member) async {
+      List<Member> members = await auth.fetchAndSetMembers(memberIds: userIds);
+
+      snapshot.docs.forEach((doc) async {
+        userIds.add(doc.id);
         loaded.add(
-          Teacher(
-            schoolId: _school.id,
-            user: member,
+          SchoolTeacher(
+            qualification: doc.data().containsKey('qualification')
+                ? doc.get('qualification')
+                : null,
+            experience: doc.data().containsKey('experience')
+                ? int.parse(doc.get('experience'))
+                : null,
+            user: members.firstWhere((element) => element.id == doc.id),
+            salary: doc.data().containsKey('salary')
+                ? int.parse(doc.get('salary').toString())
+                : null,
+            joiningDate:
+                DateTime.parse(doc.get('joiningDate').toDate().toString()),
           ),
         );
       });
 
       _teachers = loaded;
+
+      print("teachers set  : " + _teachers.length.toString());
       notifyListeners();
     } catch (e) {
       print(e.toString());
@@ -226,55 +273,41 @@ class SchoolNotifier with ChangeNotifier, Members {
     }
   }
 
-  Future<void> addTeacher(Member addedUser, bool isAdmin) async {
-    // final newItem = {
-    //   'user': addedUser.id,
-    //   'name': addedUser.username,
-    //   'imageURL': addedUser.imageURL,
-    // };
-
+  Future<void> addTeacher(SchoolTeacher schoolTeacher) async {
     try {
-      final schooldoc = db.collection(schoolsTableName).doc(_school.id);
-
-      // // adding to School => teachers collection
-      // await schoolCollection
-      //     .collection(teachersTableName)
-      //     .doc(addedUser.id)
-      //     .set(newItem);
-      // updating to School  collection
-
-      // add user to admins of the school
-      if (isAdmin) {
-        await schooldoc.update({
-          'admins': FieldValue.arrayUnion([addedUser.id]),
-          'teachers': FieldValue.arrayUnion([addedUser.id]),
-        });
-        print('User ' +
-            addedUser.username +
-            ' user added as Admins and Teachers');
-        _school.adminIds.add(addedUser.id);
-      } else {
-        // add user to teachers of the school
-        await schooldoc.update({
-          'teachers': FieldValue.arrayUnion([addedUser.id]),
-        });
-        print('User ' + addedUser.username + ' user added as Teacher');
-      }
-
-      await FirebaseFirestore.instance
-          .collection(membersTableName)
-          .doc(addedUser.id)
-          .update({
-        'schools': FieldValue.arrayUnion([_school.id]),
+      // add/update schoolId in users collection
+      await db.collection(membersTableName).doc(schoolTeacher.user.id).update({
+        'schoolId': this.id,
+        'roles': FieldValue.arrayUnion(['teacher']),
       });
 
-      final newItemList = Teacher(
-        schoolId: _school.id,
-        user: addedUser,
+      final timestamp = DateTime.now();
+
+      // add teacher in schools collection
+      await db
+          .collection(schoolsTableName)
+          .doc(this.id)
+          .collection(teachersTableName)
+          .doc(schoolTeacher.user.id)
+          .set({
+        'joiningDate': timestamp,
+        'experience': schoolTeacher.experience,
+        'qualification': schoolTeacher.qualification,
+        'salary': schoolTeacher.salary,
+      });
+
+      print('User ' + schoolTeacher.user.username + ' user added as Teacher');
+
+      final newItemList = SchoolTeacher(
+        joiningDate: timestamp,
+        experience: schoolTeacher.experience,
+        qualification: schoolTeacher.qualification,
+        user: schoolTeacher.user,
+        salary: schoolTeacher.salary,
       );
 
-      _school.teacherIds.add(addedUser.id);
-      _teachers.insert(0, newItemList);
+      //_school.teacherIds.add(addedUser.id);
+      this.teachers.insert(0, newItemList);
 
       notifyListeners();
     } catch (e) {
@@ -323,7 +356,7 @@ class SchoolNotifier with ChangeNotifier, Members {
       // existingItem = null;
 
       // remove from the school collection
-      await db.collection(schoolsTableName).doc(_school.id).update({
+      await db.collection(schoolsTableName).doc(id).update({
         'teachers': FieldValue.arrayRemove([userId]),
         // scope for improvement get if the user is Admin and make line only if is admin
         'admins': FieldValue.arrayRemove([userId]),
@@ -333,11 +366,93 @@ class SchoolNotifier with ChangeNotifier, Members {
           .collection(membersTableName)
           .doc(userId)
           .update({
-        'schools': FieldValue.arrayRemove([_school.id]),
+        'schools': FieldValue.arrayRemove([id]),
       });
     } catch (e) {
       _teachers.insert(existingItemIndex, existingItem);
       notifyListeners();
+      throw e;
+    }
+  }
+
+  // ========================================= Admin ============================
+
+  Future<void> addAdmin(Member addedUser, String qualification) async {
+    // add/update schoolId in users collection
+
+    try {
+      await db.collection(membersTableName).doc(addedUser.id).update({
+        'schoolId': this.id,
+        'roles': FieldValue.arrayUnion(['schoolAdmin']),
+      });
+
+      final timestamp = DateTime.now();
+
+      // add teacher in schools collection
+
+      await db
+          .collection(schoolsTableName)
+          .doc(this.id)
+          .collection(adminsTableName)
+          .doc(addedUser.id)
+          .set({
+        "joiningDate": timestamp,
+      });
+
+      print('User ' + addedUser.username + ' user added as Teacher');
+
+      final newItemList = SchoolAdmin(
+        joiningDate: timestamp,
+        qualification: qualification,
+        user: addedUser,
+      );
+
+      //_school.teacherIds.add(addedUser.id);
+      this.admins.insert(0, newItemList);
+
+      notifyListeners();
+    } catch (e) {
+      print(e);
+      throw e;
+    }
+  }
+
+  // ========================================= Students ============================
+
+  Future<void> addStudent(SchoolStudent schoolStudent) async {
+    // add/update schoolId in users collection
+
+    try {
+      await db.collection(membersTableName).doc(schoolStudent.user.id).update({
+        'schoolId': this.id,
+        'roles': FieldValue.arrayUnion(['student']),
+      });
+
+      final timestamp = DateTime.now();
+
+      // add teacher in schools collection
+
+      await db
+          .collection(schoolsTableName)
+          .doc(this.id)
+          .collection(studentsTableName)
+          .doc(schoolStudent.user.id)
+          .set({
+        'fatherName': schoolStudent.fatherName,
+        'motherName': schoolStudent.motherName,
+        'previousSchool': schoolStudent.previousSchool,
+        'previousSchoolGrade': schoolStudent.previousSchoolGrade,
+        'studenNumber': schoolStudent.studenNumber,
+        'joiningDate': timestamp,
+      });
+
+      print('User ' + schoolStudent.user.username + ' user added as Teacher');
+
+      this.students.insert(0, schoolStudent);
+
+      notifyListeners();
+    } catch (e) {
+      print(e);
       throw e;
     }
   }

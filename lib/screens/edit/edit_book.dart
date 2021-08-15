@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:autocomplete_textfield/autocomplete_textfield.dart';
 
-import 'package:tuto/models/models.dart';
 import 'package:tuto/new_providers/book.dart';
-import 'package:tuto/new_providers/class.dart';
+import 'package:tuto/new_providers/books.dart';
 
-import '../../common/utils.dart';
 import '../../data/constants.dart';
 
 class EditBookScreen extends StatefulWidget {
@@ -17,20 +14,20 @@ class EditBookScreen extends StatefulWidget {
 }
 
 class _EditBookScreenState extends State<EditBookScreen> {
-  final _priceFocusNode = FocusNode();
-  final _cgstFocusNode = FocusNode();
-  final _sgstFocusNode = FocusNode();
-  final _igstFocusNode = FocusNode();
-  final _hsnFocusNode = FocusNode();
-  final _uqmFocusNode = FocusNode();
+  final _gradeFocusNode = FocusNode();
+  final _subjectFocusNode = FocusNode();
+  final _pagesFocusNode = FocusNode();
+  final _editorFocusNode = FocusNode();
+  final _publisherFocusNode = FocusNode();
+  final _titleFocusNode = FocusNode();
   final _descriptionFocusNode = FocusNode();
   final _imageUrlController = TextEditingController();
 
-  GlobalKey autoCompletionKey =
-      new GlobalKey<AutoCompleteTextFieldState<Book>>();
+  // GlobalKey autoCompletionKey =
+  //     new GlobalKey<AutoCompleteTextFieldState<Book>>();
 
-  List<Book> availableBooks;
-  Book selectedBook;
+  //List<Book> availableBooks;
+  //Book selectedBook;
 
   final _imageUrlFocusNode = FocusNode();
   final _form = GlobalKey<FormState>();
@@ -56,32 +53,19 @@ class _EditBookScreenState extends State<EditBookScreen> {
     'publisher': '',
     'imageUrl': '',
   };
-  final _cgstController = TextEditingController(text: '2.5');
-  final _sgstController = TextEditingController(text: '2.5');
-  final _igstController = TextEditingController(text: '1');
 
   var _isInit = true;
   var _isLoading = false;
-  double _totalGst;
 
   String titleAction = "Add Book";
 
   @override
-  void initState() {
-    _imageUrlFocusNode.addListener(_updateImageUrl);
-    _cgstFocusNode.addListener(_updateTotalGST);
-    _sgstFocusNode.addListener(_updateTotalGST);
-    _igstFocusNode.addListener(_updateTotalGST);
-    super.initState();
-  }
-
-  @override
   void didChangeDependencies() async {
-    final classData = Provider.of<ClassNotifier>(context, listen: false);
+    final bookData = Provider.of<Books>(context, listen: false);
     if (_isInit) {
       final productId = ModalRoute.of(context).settings.arguments as String;
       if (productId != null) {
-        _editedBook = classData.findBookById(productId);
+        _editedBook = bookData.findBookById(productId);
         _initValues = {
           'grade': _editedBook.grade,
           'subject': _editedBook.subject,
@@ -95,9 +79,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
         _imageUrlController.text = _editedBook.imageUrl;
         titleAction = "Edit Book";
       }
-      await classData.fetchAndSetAllBooks();
-      availableBooks = classData.allBooks;
-      print("availableBooks.length : " + availableBooks.length.toString());
+
+      //print("availableBooks.length : " + availableBooks.length.toString());
     }
     _isInit = false;
     super.didChangeDependencies();
@@ -106,21 +89,16 @@ class _EditBookScreenState extends State<EditBookScreen> {
   @override
   void dispose() {
     _imageUrlFocusNode.removeListener(_updateImageUrl);
-    _cgstFocusNode.removeListener(_updateTotalGST);
-    _sgstFocusNode.removeListener(_updateTotalGST);
-    _igstFocusNode.removeListener(_updateTotalGST);
-    _priceFocusNode.dispose();
+
+    _gradeFocusNode.dispose();
     _descriptionFocusNode.dispose();
     _imageUrlController.dispose();
-    _cgstController.dispose();
-    _sgstController.dispose();
-    _igstController.dispose();
     _imageUrlFocusNode.dispose();
-    _cgstFocusNode.dispose();
-    _sgstFocusNode.dispose();
-    _igstFocusNode.dispose();
-    _hsnFocusNode.dispose();
-    _uqmFocusNode.dispose();
+    _subjectFocusNode.dispose();
+    _pagesFocusNode.dispose();
+    _editorFocusNode.dispose();
+    _publisherFocusNode.dispose();
+    _titleFocusNode.dispose();
     super.dispose();
   }
 
@@ -137,19 +115,6 @@ class _EditBookScreenState extends State<EditBookScreen> {
     }
   }
 
-  void _updateTotalGST() {
-    //if (!_cgstFocusNode.hasFocus) {
-    if (double.tryParse(_cgstController.text) != null &&
-        double.tryParse(_sgstController.text) != null &&
-        double.tryParse(_igstController.text) != null)
-      _totalGst = double.parse(_cgstController.text) +
-          double.parse(_sgstController.text) +
-          double.parse(_igstController.text);
-    print(_totalGst);
-    setState(() {});
-    // }
-  }
-
   Future<void> _saveForm() async {
     final isValid = _form.currentState.validate();
     if (!isValid) {
@@ -160,12 +125,11 @@ class _EditBookScreenState extends State<EditBookScreen> {
       _isLoading = true;
     });
     if (_editedBook.id != null) {
-      await Provider.of<ClassNotifier>(context, listen: false)
+      await Provider.of<Books>(context, listen: false)
           .updateBook(_editedBook.id, _editedBook);
     } else {
       try {
-        await Provider.of<ClassNotifier>(context, listen: false)
-            .addBook(_editedBook);
+        await Provider.of<Books>(context, listen: false).addBook(_editedBook);
       } catch (e) {
         await showDialog<Null>(
             context: context,
@@ -173,7 +137,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                   title: Text('An error occured!'),
                   content: Text('Something went wrong'),
                   actions: [
-                    FlatButton(
+                    TextButton(
                       child: Text('Okay'),
                       onPressed: () {
                         Navigator.of(context).pop();
@@ -182,12 +146,6 @@ class _EditBookScreenState extends State<EditBookScreen> {
                   ],
                 ));
       }
-      //  finally {
-      //   setState(() {
-      //     _isLoading = false;
-      //   });
-      //   Navigator.of(context).pop();
-      // }
     }
     setState(() {
       _isLoading = false;
@@ -229,9 +187,10 @@ class _EditBookScreenState extends State<EditBookScreen> {
                             value: _initValues['grade'] ?? gradeValue,
                             isExpanded: true,
                             items: grades.keys
-                                .map((grades) => DropdownMenuItem(
-                                      child: Text(grades),
-                                      value: grades,
+                                .map((grade) => DropdownMenuItem(
+                                      child: Text(
+                                          grade.toString().split('.').last),
+                                      value: grade.toString().split('.').last,
                                     ))
                                 .toList(),
                             hint: Text('Grade'),
@@ -264,10 +223,10 @@ class _EditBookScreenState extends State<EditBookScreen> {
                             value: _initValues['subject'] ?? subjectValue,
                             items: gradeValue == null
                                 ? null
-                                : grades[gradeValue]
-                                    .map((grades) => DropdownMenuItem(
-                                          child: Text(grades),
-                                          value: grades,
+                                : grades[getGradeByString(gradeValue)]
+                                    .map((subject) => DropdownMenuItem(
+                                          child: Text(subject),
+                                          value: subject,
                                         ))
                                     .toList(),
                             hint: Text('Subject'),
@@ -304,10 +263,10 @@ class _EditBookScreenState extends State<EditBookScreen> {
                             decoration: InputDecoration(labelText: 'Pages'),
                             textInputAction: TextInputAction.next,
                             keyboardType: TextInputType.number,
-                            focusNode: _priceFocusNode,
+                            focusNode: _pagesFocusNode,
                             onFieldSubmitted: (_) {
                               FocusScope.of(context)
-                                  .requestFocus(_cgstFocusNode);
+                                  .requestFocus(_editorFocusNode);
                             },
                             validator: (value) {
                               if (value.isEmpty) {
@@ -345,10 +304,10 @@ class _EditBookScreenState extends State<EditBookScreen> {
                                 labelText: 'Editor',
                                 hintText: 'Editor/Author of the book'),
                             textInputAction: TextInputAction.next,
-                            focusNode: _hsnFocusNode,
+                            focusNode: _editorFocusNode,
                             onFieldSubmitted: (_) {
                               FocusScope.of(context)
-                                  .requestFocus(_uqmFocusNode);
+                                  .requestFocus(_publisherFocusNode);
                             },
                             validator: (value) {
                               if (value.isEmpty) {
@@ -384,10 +343,9 @@ class _EditBookScreenState extends State<EditBookScreen> {
                       ),
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.next,
-                      focusNode: _uqmFocusNode,
+                      focusNode: _publisherFocusNode,
                       onFieldSubmitted: (_) {
-                        FocusScope.of(context)
-                            .requestFocus(_descriptionFocusNode);
+                        FocusScope.of(context).requestFocus(_titleFocusNode);
                       },
                       validator: (value) {
                         if (value.isEmpty) {
@@ -412,78 +370,81 @@ class _EditBookScreenState extends State<EditBookScreen> {
                       },
                     ),
 
-                    new Column(children: [
-                      new Container(
-                        child: new AutoCompleteTextField<Book>(
-                          decoration: new InputDecoration(
-                              hintText: "Search Book",
-                              suffixIcon: new Icon(Icons.search)),
-                          itemSubmitted: (item) {
-                            setState(() => selectedBook = item);
-                            _editedBook = Book(
-                              title: _editedBook.title,
-                              grade: _editedBook.grade,
-                              subject: _editedBook.subject,
-                              description: _editedBook.description,
-                              pages: _editedBook.pages,
-                              editor: _editedBook.editor,
-                              publisher: _editedBook.publisher,
-                              imageUrl: _editedBook.imageUrl,
-                              id: selectedBook.id,
-                            );
-                          },
-                          key: autoCompletionKey,
-                          suggestions: availableBooks,
-                          itemBuilder: (context, suggestion) => new Padding(
-                              child: new ListTile(
-                                leading: (suggestion.imageUrl ?? "").isEmpty
-                                    ? CircleAvatar(
-                                        backgroundImage:
-                                            NetworkImage(suggestion.imageUrl),
-                                      )
-                                    : CircleAvatar(
-                                        child: Text(suggestion.title.image),
-                                      ),
-                                title: new Text(suggestion.title),
-                                //trailing: new Text("Stars: ${suggestion.stars}")),
-                              ),
-                              padding: EdgeInsets.all(8.0)),
-                          itemSorter: (a, b) => 0,
-                          itemFilter: (suggestion, input) => suggestion.title
-                              .toLowerCase()
-                              .startsWith(input.toLowerCase()),
-                        ),
-                      ),
-                      new Padding(
-                          padding: EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
-                          child: new Card(
-                              child: selectedBook != null
-                                  ? new Column(children: [
-                                      new ListTile(
-                                        leading: (selectedBook.imageUrl ?? "")
-                                                .isEmpty
-                                            ? CircleAvatar(
-                                                child: Text(
-                                                    selectedBook.title.image),
-                                              )
-                                            : CircleAvatar(
-                                                backgroundImage: NetworkImage(
-                                                    selectedBook.imageUrl),
-                                              ),
-                                        title: new Text(selectedBook.title),
-                                        //trailing: new Text("Stars: ${selected.stars}")),
-                                      ),
-                                    ])
-                                  : new Icon(Icons.cancel))),
-                    ]),
+                    // new Column(children: [
+                    //   new Container(
+                    //     child: new AutoCompleteTextField<Book>(
+                    //       decoration: new InputDecoration(
+                    //           hintText: "Search Book",
+                    //           suffixIcon: new Icon(Icons.search)),
+                    //       itemSubmitted: (item) {
+                    //         setState(() => selectedBook = item);
+                    //         _editedBook = Book(
+                    //           title: _editedBook.title,
+                    //           grade: _editedBook.grade,
+                    //           subject: _editedBook.subject,
+                    //           description: _editedBook.description,
+                    //           pages: _editedBook.pages,
+                    //           editor: _editedBook.editor,
+                    //           publisher: _editedBook.publisher,
+                    //           imageUrl: _editedBook.imageUrl,
+                    //           id: selectedBook.id,
+                    //         );
+                    //       },
+                    //       key: autoCompletionKey,
+                    //       suggestions: availableBooks,
+                    //       itemBuilder: (context, suggestion) => new Padding(
+                    //           child: new ListTile(
+                    //             leading: (suggestion.imageUrl ?? "").isEmpty
+                    //                 ? CircleAvatar(
+                    //                     backgroundImage:
+                    //                         NetworkImage(suggestion.imageUrl),
+                    //                   )
+                    //                 : CircleAvatar(
+                    //                     child: Text(suggestion.title.image),
+                    //                   ),
+                    //             title: new Text(suggestion.title),
+                    //             //trailing: new Text("Stars: ${suggestion.stars}")),
+                    //           ),
+                    //           padding: EdgeInsets.all(8.0)),
+                    //       itemSorter: (a, b) => 0,
+                    //       itemFilter: (suggestion, input) => suggestion.title
+                    //           .toLowerCase()
+                    //           .startsWith(input.toLowerCase()),
+                    //     ),
+                    //   ),
+                    //   new Padding(
+                    //       padding: EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
+                    //       child: new Card(
+                    //           child: selectedBook != null
+                    //               ? new Column(children: [
+                    //                   new ListTile(
+                    //                     leading: (selectedBook.imageUrl ?? "")
+                    //                             .isEmpty
+                    //                         ? CircleAvatar(
+                    //                             child: Text(
+                    //                                 selectedBook.title.image),
+                    //                           )
+                    //                         : CircleAvatar(
+                    //                             backgroundImage: NetworkImage(
+                    //                                 selectedBook.imageUrl),
+                    //                           ),
+                    //                     title: new Text(selectedBook.title),
+                    //                     //trailing: new Text("Stars: ${selected.stars}")),
+                    //                   ),
+                    //                 ])
+                    //               : new Icon(Icons.cancel))),
+                    // ]),
 
                     // Title
                     TextFormField(
                       initialValue: _initValues['title'],
                       decoration: InputDecoration(labelText: 'Title'),
+                      keyboardType: TextInputType.text,
                       textInputAction: TextInputAction.next,
+                      focusNode: _titleFocusNode,
                       onFieldSubmitted: (_) {
-                        FocusScope.of(context).requestFocus(_priceFocusNode);
+                        FocusScope.of(context)
+                            .requestFocus(_descriptionFocusNode);
                       },
                       validator: (value) {
                         if (value.isEmpty) {

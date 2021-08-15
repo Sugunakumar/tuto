@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tuto/data/constants.dart';
+import 'package:tuto/new_providers/class.dart';
 import 'package:tuto/new_providers/school.dart';
 import 'package:tuto/providers/auth.dart';
 import 'package:tuto/widgets/item/classTeacher_item.dart';
 
-class TeachersTab extends StatelessWidget {
-  final School loadedSchool;
+class StudentsTab extends StatelessWidget {
+  final Class loadedClass;
   final bool isSearching;
   final String searchText;
 
-  TeachersTab(this.loadedSchool, this.isSearching, this.searchText, {Key key})
+  StudentsTab(this.loadedClass, this.isSearching, this.searchText, {Key key})
       : super(key: key);
 
   Future<void> _refreshProducts(BuildContext context) async {
@@ -17,7 +19,7 @@ class TeachersTab extends StatelessWidget {
     final auth = Provider.of<Auth>(context, listen: false);
     await auth.fetchAndSetMembers();
     // fetch and set School Teachers
-    await this.loadedSchool.fetchAndSetTeachers(auth);
+    //await this.loadedClass.fetchAndSetStudents();
     print("refresh called");
   }
 
@@ -25,7 +27,7 @@ class TeachersTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () => _refreshProducts(context),
-      child: loadedSchool.teachers.isEmpty
+      child: loadedClass.students.isEmpty
           ? FutureBuilder(
               future: _refreshProducts(context),
               builder: (ctx, dataSnapshot) {
@@ -38,36 +40,36 @@ class TeachersTab extends StatelessWidget {
                   print(dataSnapshot.error.toString());
                   return Center(child: Text('An Error occured'));
                 } else {
-                  return TeachersList(loadedSchool, isSearching, searchText);
+                  return StudentsList(loadedClass, isSearching, searchText);
                 }
               })
-          : TeachersList(loadedSchool, isSearching, searchText),
+          : StudentsList(loadedClass, isSearching, searchText),
     );
   }
 }
 
-class TeachersList extends StatefulWidget {
-  final School loadedSchool;
+class StudentsList extends StatefulWidget {
+  final Class loadedClass;
   final bool isSearching;
   final String searchText;
 
-  const TeachersList(this.loadedSchool, this.isSearching, this.searchText,
+  const StudentsList(this.loadedClass, this.isSearching, this.searchText,
       {Key key})
       : super(key: key);
 
   @override
-  _TeachersListState createState() => _TeachersListState();
+  _StudentsListState createState() => _StudentsListState();
 }
 
-class _TeachersListState extends State<TeachersList> {
+class _StudentsListState extends State<StudentsList> {
   @override
   Widget build(BuildContext context) {
     var teachers;
     if (widget.isSearching)
-      teachers =
-          widget.loadedSchool.findTeachersByNamePattern(widget.searchText);
+      //teachers = widget.loadedClass.findTeachersByNamePattern(widget.searchText);
+      teachers = null;
     else
-      teachers = widget.loadedSchool.teachers;
+      teachers = widget.loadedClass.students;
 
     return teachers.isNotEmpty
         ? ListView.builder(

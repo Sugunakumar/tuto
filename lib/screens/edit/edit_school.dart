@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/school.dart';
+
 import 'package:tuto/new_providers/schools.dart';
 import 'package:tuto/widgets/picker/box_image.dart';
 
@@ -43,7 +44,7 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
 
   var _isInit = true;
   var _isLoading = false;
-  String titleAction = "Edit School";
+  String titleAction = "Add School";
 
   File _imageFile;
 
@@ -66,8 +67,8 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
           'phone': _edited.phone,
           'imageURL': _edited.imageURL,
         };
-      } else
-        titleAction = "Add School";
+        titleAction = "Edit School";
+      }
     }
     _isInit = false;
     super.didChangeDependencies();
@@ -117,12 +118,6 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
                   ],
                 ));
       }
-      //  finally {
-      //   setState(() {
-      //     _isLoading = false;
-      //   });
-      //   Navigator.of(context).pop();
-      // }
     }
     setState(() {
       _isLoading = false;
@@ -248,8 +243,9 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
                         FocusScope.of(context).requestFocus(_boardFocusNode);
                       },
                       validator: (value) {
-                        if (value.trim().length < 10)
+                        if (value.trim().length < 10) {
                           return 'Please enter a valid phone number.';
+                        }
                         return null;
                       },
                       onSaved: (value) {

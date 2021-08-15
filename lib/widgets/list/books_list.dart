@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/book.dart';
 import 'package:tuto/new_providers/books.dart';
-import 'package:tuto/new_providers/class.dart';
+import 'package:tuto/new_providers/school.dart';
+import 'package:tuto/new_providers/schools.dart';
+import 'package:tuto/providers/auth.dart';
 
 import 'package:tuto/widgets/item/book_item.dart';
 
@@ -12,27 +14,28 @@ class BookListTab extends StatelessWidget {
   BookListTab(this.isSearching, this.searchText, {Key key}) : super(key: key);
 
   Future<void> _refresh(BuildContext context) async {
-    await Provider.of<ClassNotifier>(context, listen: false)
-        .fetchAndSetAllBooks();
+    final auth = context.watch<Auth>();
+    if (auth.currentMember.schoolId != null) {
+      final School school =
+          context.watch<Schools>().findById(auth.currentMember.schoolId);
+      await Provider.of<Books>(context, listen: false)
+          .fetchAndSetBooks(auth, school);
+    } else
+      await Provider.of<Books>(context, listen: false)
+          .fetchAndSetBooks(auth, null);
   }
 
   List<Book> loadBooks(BuildContext context) {
-    final booksData = Provider.of<ClassNotifier>(context, listen: false);
+    final booksData = Provider.of<Books>(context, listen: false);
     if (isSearching)
-      return booksData.findAllBooksByName(searchText);
+      return booksData.findBooksByName(searchText);
     else
-      return booksData.allBooks;
+      return booksData.books;
   }
 
   @override
   Widget build(BuildContext context) {
-    print("widget.isSearching.toString : " + isSearching.toString());
-    //List<Book> books = loadBooks(context);
-    //print("books.length : " + books.length.toString());
-    List<Book> books =
-        Provider.of<ClassNotifier>(context, listen: false).fetchAllBooks
-            ? loadBooks(context)
-            : [];
+    List<Book> books = loadBooks(context);
 
     return RefreshIndicator(
       onRefresh: () => _refresh(context),

@@ -16,17 +16,15 @@ enum FilterOptions {
   All,
 }
 
-class HomeScreen extends StatefulWidget {
+class SchoolScreen extends StatefulWidget {
   static const routeName = '/school-detail';
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _SchoolScreenState createState() => _SchoolScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
+class _SchoolScreenState extends State<SchoolScreen>
     with SingleTickerProviderStateMixin {
-  var _showOnlyFavorites = false;
-
   TabController _tabController;
   bool _isSearching;
   String _searchText = "";
@@ -40,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen>
   );
   final TextEditingController _searchQuery = new TextEditingController();
 
-  _HomeScreenState() {
+  _SchoolScreenState() {
     _searchQuery.addListener(() {
       if (_searchQuery.text.isEmpty) {
         setState(() {
@@ -83,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     //final bool isAdmin = context.watch<Auth>().isAdmin();
     final auth = context.watch<Auth>();
+    final schoolId = ModalRoute.of(context).settings.arguments as String;
 
     //final bool hasAccess = auth.hasAccess(Entity.School, Operations.View);
 

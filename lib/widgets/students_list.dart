@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/models.dart';
 import 'package:tuto/new_providers/class.dart';
 
 // class StudentsList extends StatelessWidget {

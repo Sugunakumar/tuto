@@ -4,67 +4,43 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tuto/data/constants.dart';
-import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/question.dart';
 
-class ChapterNotifier with ChangeNotifier {
-  School _school;
-  Class _class;
-  Book _book;
-  Chapter _chapter;
+class Chapter with ChangeNotifier {
+  final String id;
+  final int index;
+  final String title;
 
-  set school(School newSchool) {
-    assert(newSchool != null);
-    _school = newSchool;
-    notifyListeners();
-  }
+  List<Question> _questions;
+  //List<WorkBook> workbooks;
 
-  School get school => _school;
+  Chapter({
+    @required this.id,
+    @required this.index,
+    @required this.title,
+  });
 
-  set clazz(Class newClass) {
-    assert(newClass != null);
-    _class = newClass;
-    notifyListeners();
-  }
+  List<Question> get questions => _questions;
 
-  Class get clazz => _class;
-
-  set book(Book newBook) {
-    assert(newBook != null);
-    _book = newBook;
-    notifyListeners();
-  }
-
-  Book get book => _book;
-
-  set chapter(Chapter newChapter) {
-    assert(newChapter != null);
-    _chapter = newChapter;
-    notifyListeners();
-  }
-
-  Chapter get chapter => _chapter;
-
-  List<Question> _questions = [];
-
-  List<Question> get questions {
-    //return _questions.toList();
-    return _questions.where((i) => i.chapterId == _chapter.id).toList();
-  }
+  // List<Question> get questions {
+  //   //return _questions.toList();
+  //   return _questions.where((i) => i.chapterId == _chapter.id).toList();
+  // }
 
   Question findQuestionsById(String id) {
     return _questions.firstWhere((ques) => ques.id == id);
   }
 
-  Future<void> fetchAndSetQuestion() async {
+  Future<void> fetchAndSetQuestion(String bookId) async {
     print("fetchAndSetQuestion entry");
 
     final List<Question> loadedQuestions = [];
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection(booksTableName)
-          .doc(_book.id)
+          .doc(bookId)
           .collection(chaptersTableName)
-          .doc(_chapter.id)
+          .doc(id)
           .collection(questionsTableName)
           .get();
 
@@ -80,17 +56,14 @@ class ChapterNotifier with ChangeNotifier {
 
         loadedQuestions.add(
           Question(
-            chapterId: _chapter.id,
+            //chapterId: _chapter.id,
             id: doc.id,
             mark: doc.get('mark'),
             type: doc.get('type') == 'Objective'
                 ? QuestionType.Objective
                 : QuestionType.Descriptive,
             question: doc.get('question'),
-            answer: doc.get('answer'),
-            incorrectAnswers: doc.data().containsKey("incorrectAnswers")
-                ? doc.get('incorrectAnswers')
-                : null,
+            questionImageURL: doc.get('questionImageURL'),
           ),
         );
       });
@@ -102,23 +75,23 @@ class ChapterNotifier with ChangeNotifier {
     }
   }
 
-  Future<void> addQuestion(Question question,
+  Future<void> addQuestion(Question question, String bookId,
       {File questionImage, File answerImage}) async {
     final newQuestion = {
       'mark': question.mark,
       'type': question.type.toString().split('.').last,
       'question': question.question,
-      'answer': question.answer,
-      if (question.incorrectAnswers != null)
-        'incorrectAnswers': FieldValue.arrayUnion(question.incorrectAnswers),
+      'answers': question.answers,
+      // if (question.incorrectAnswers != null)
+      //   'incorrectAnswers': FieldValue.arrayUnion(question.incorrectAnswers),
     };
 
     try {
       final questionCollection = FirebaseFirestore.instance
           .collection(booksTableName)
-          .doc(_book.id)
+          .doc(bookId)
           .collection(chaptersTableName)
-          .doc(_chapter.id)
+          .doc(id)
           .collection(questionsTableName);
 
       final addedProduct = await questionCollection.add(newQuestion);
@@ -131,7 +104,7 @@ class ChapterNotifier with ChangeNotifier {
             .child('question_images')
             .child(addedProduct.id + '.jpg');
 
-        await ref.putFile(questionImage).onComplete;
+        await ref.putFile(questionImage).whenComplete(() => null);
 
         questionUrl = await ref.getDownloadURL();
       }
@@ -141,7 +114,7 @@ class ChapterNotifier with ChangeNotifier {
             .child('answer_images')
             .child(addedProduct.id + '.jpg');
 
-        await ref.putFile(questionImage).onComplete;
+        await ref.putFile(questionImage).whenComplete(() => null);
 
         answerUrl = await ref.getDownloadURL();
       }
@@ -157,10 +130,8 @@ class ChapterNotifier with ChangeNotifier {
         mark: question.mark,
         type: question.type,
         question: question.question,
-        answer: question.answer,
-        incorrectAnswers: question.incorrectAnswers,
         questionImageURL: questionUrl,
-        answerImageURL: answerUrl,
+        //answerImageURL: answerUrl,
       );
       //_questions.add(newProductList);
       _questions.insert(0, newProductList);
@@ -171,22 +142,23 @@ class ChapterNotifier with ChangeNotifier {
     }
   }
 
-  Future<void> updateQuestion(String id, Question newQuestion) async {
+  Future<void> updateQuestion(
+      String bookId, String chapterId, Question newQuestion) async {
     final prodIndex = _questions.indexWhere((prod) => prod.id == id);
     if (prodIndex >= 0) {
       try {
         await FirebaseFirestore.instance
             .collection(booksTableName)
-            .doc(_book.id)
+            .doc(bookId)
             .collection(chaptersTableName)
-            .doc(_chapter.id)
-            .collection(questionsTableName)
             .doc(id)
+            .collection(questionsTableName)
+            .doc(chapterId)
             .update({
           'mark': newQuestion.mark,
           'type': newQuestion.type,
           'question': newQuestion.question,
-          'answer': newQuestion.answer,
+          'answer': newQuestion.answers,
         });
         _questions[prodIndex] = newQuestion;
         notifyListeners();
@@ -199,7 +171,7 @@ class ChapterNotifier with ChangeNotifier {
     }
   }
 
-  Future<void> deleteQuestion(String id) async {
+  Future<void> deleteQuestion(String bookId, String chapterId) async {
     final existingQuestionIndex =
         _questions.indexWhere((prod) => prod.id == id);
     var existingQuestion = _questions[existingQuestionIndex];
@@ -209,11 +181,11 @@ class ChapterNotifier with ChangeNotifier {
     try {
       await FirebaseFirestore.instance
           .collection(booksTableName)
-          .doc(_book.id)
+          .doc(bookId)
           .collection(chaptersTableName)
-          .doc(_chapter.id)
-          .collection(questionsTableName)
           .doc(id)
+          .collection(questionsTableName)
+          .doc(chapterId)
           .delete();
       existingQuestion = null;
     } catch (e) {

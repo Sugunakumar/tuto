@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tuto/data/constants.dart';
-import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/models.dart';
 import 'package:tuto/new_providers/school.dart';
 import 'package:tuto/new_providers/schools.dart';
 import 'package:tuto/providers/auth.dart';
@@ -165,6 +165,7 @@ class CardActionButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // if (auth.hasAccess(Entity.School, Operations.Update))
         IconButton(
           icon: const Icon(Icons.edit),
           onPressed: () {
@@ -185,17 +186,17 @@ class SchoolItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final User currentUser = context.watch<Auth>().fetchCurrentUser();
-    final bool isStudent =
-        context.watch<Schools>().isStudent(school.id, currentUser.uid);
-    print(school.name + ' isStudent  ' + isStudent.toString());
-    final bool isTeacher =
-        context.watch<Schools>().isTeacher(school.id, currentUser.uid);
-    print(school.name + ' isTeacher  ' + isTeacher.toString());
-    final bool isAdmin = context.watch<Auth>().isAdmin();
-    print('isAdmin  ' + isAdmin.toString());
+    // final bool isStudent =
+    //     context.watch<Schools>().isStudent(school.id, currentUser.uid);
+    // print(school.name + ' isStudent  ' + isStudent.toString());
+    // final bool isTeacher =
+    //     context.watch<Schools>().isTeacher(school.id, currentUser.uid);
+    // print(school.name + ' isTeacher  ' + isTeacher.toString());
+    final auth = context.watch<Auth>();
+    //final bool isAdmin = context.watch<Auth>().isAdmin();
+    //print('isAdmin  ' + isAdmin.toString());
 
-    final bool belongsToSchool = isStudent || isTeacher ? true : false;
+    //final bool belongsToSchool = isStudent || isTeacher ? true : false;
 
     final scaffold = Scaffold.of(context);
     return ClipRRect(
@@ -216,40 +217,37 @@ class SchoolItem extends StatelessWidget {
             vertical: 4,
           ),
         ),
-        direction: DismissDirection.endToStart,
+        direction: auth.isAdmin() ? DismissDirection.endToStart : null,
         confirmDismiss: (direction) {
-          if (isAdmin)
-            return showDialog(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: Text('Are you sure?'),
-                content: Text(
-                  'Do you want to remove the school from the list?',
-                ),
-                actions: <Widget>[
-                  FlatButton(
-                    child: Text('No'),
-                    onPressed: () {
-                      Navigator.of(ctx).pop(false);
-                    },
-                  ),
-                  FlatButton(
-                    child: Text('Yes'),
-                    onPressed: () {
-                      Navigator.of(ctx).pop(true);
-                    },
-                  ),
-                ],
+          return showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text('Are you sure?'),
+              content: Text(
+                'Do you want to remove the school from the list?',
               ),
-            );
-          else
-            return null;
+              actions: <Widget>[
+                TextButton(
+                  child: Text('No'),
+                  onPressed: () {
+                    Navigator.of(ctx).pop(false);
+                  },
+                ),
+                TextButton(
+                  child: Text('Yes'),
+                  onPressed: () {
+                    Navigator.of(ctx).pop(true);
+                  },
+                ),
+              ],
+            ),
+          );
         },
         onDismissed: (direction) async {
           try {
             await Provider.of<Schools>(context, listen: false)
                 .delete(school.id);
-            Scaffold.of(context).showSnackBar(
+            ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
                   'School deleted',
@@ -258,7 +256,7 @@ class SchoolItem extends StatelessWidget {
               ),
             );
           } catch (e) {
-            Scaffold.of(context).showSnackBar(
+            ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
                   'Deleting Failed',
@@ -275,14 +273,14 @@ class SchoolItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 5),
             child: InkWell(
               onTap: () {
-                context.read<SchoolNotifier>().school = school;
-                Navigator.of(context).pushNamed(SchoolProfile.routeName);
+                Navigator.of(context)
+                    .pushNamed(SchoolProfile.routeName, arguments: school.id);
               },
-              // onLongPress: () {
-              //   print('edit  : ' + school.id);
-              //   Navigator.of(context)
-              //       .pushNamed(EditSchoolScreen.routeName, arguments: school.id);
-              // },
+              onLongPress: () {
+                print('edit  : ' + school.id);
+                Navigator.of(context).pushNamed(EditSchoolScreen.routeName,
+                    arguments: school.id);
+              },
               // Generally, material cards use onSurface with 12% opacity for the pressed state.
               splashColor:
                   Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
@@ -318,8 +316,8 @@ class SchoolItem extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (belongsToSchool || isAdmin)
-                      CardActionButtons(school: school),
+                    //if (belongsToSchool || isAdmin)
+                    //CardActionButtons(school: school),
                   ],
                 ),
               ),

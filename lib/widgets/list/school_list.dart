@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tuto/data/constants.dart';
+import 'package:tuto/new_providers/school.dart';
 import 'package:tuto/new_providers/schools.dart';
+import 'package:tuto/providers/auth.dart';
 import 'package:tuto/widgets/item/school_item.dart';
 
 class SchoolListTab extends StatelessWidget {
@@ -9,16 +12,33 @@ class SchoolListTab extends StatelessWidget {
   SchoolListTab(this.isSearching, this.searchText, {Key key}) : super(key: key);
 
   Future<void> _refreshProducts(BuildContext context) async {
-    await Provider.of<Schools>(context, listen: false).fetchAndSet();
+    final auth = context.watch<Auth>();
+    final schoolProv = Provider.of<Schools>(context, listen: false);
+
+    //auth.fetchAndSetMembers();
+    // student // has schoolId  // has role sutdent
+
+// fetches schools, it's classes and teachers.
+// orderby shools belong to
+    await schoolProv.fetchAndSetSchools(auth);
   }
+
+  // List<School> loadSchools(BuildContext context) {
+  //   final schoolData = Provider.of<Schools>(context, listen: false);
+  //   if (isSearching)
+  //     return schoolData.findSchoolsByName(searchText);
+  //   else
+  //     return schoolData.schools;
+  // }
 
   @override
   Widget build(BuildContext context) {
-    final schoolsData = Provider.of<Schools>(context, listen: false);
+    final schoolData = Provider.of<Schools>(context, listen: false);
+
     return RefreshIndicator(
       onRefresh: () => _refreshProducts(context),
-      child: schoolsData.items.isNotEmpty
-          ? SchoolsListAgain(isSearching, searchText)
+      child: schoolData.schools.isNotEmpty
+          ? SchoolsList(isSearching, searchText)
           : FutureBuilder(
               future: _refreshProducts(context),
               builder: (ctx, dataSnapshot) {
@@ -30,7 +50,7 @@ class SchoolListTab extends StatelessWidget {
                   // Error handling
                   return Center(child: Text('An Error occured'));
                 } else {
-                  return SchoolsListAgain(isSearching, searchText);
+                  return SchoolsList(isSearching, searchText);
                 }
               },
             ),
@@ -38,16 +58,16 @@ class SchoolListTab extends StatelessWidget {
   }
 }
 
-class SchoolsListAgain extends StatefulWidget {
+class SchoolsList extends StatefulWidget {
   final bool isSearching;
   final String searchText;
-  SchoolsListAgain(this.isSearching, this.searchText);
+  SchoolsList(this.isSearching, this.searchText);
 
   @override
-  _SchoolsListAgainState createState() => _SchoolsListAgainState();
+  _SchoolsListState createState() => _SchoolsListState();
 }
 
-class _SchoolsListAgainState extends State<SchoolsListAgain> {
+class _SchoolsListState extends State<SchoolsList> {
   @override
   Widget build(BuildContext context) {
     var schools;
@@ -55,7 +75,7 @@ class _SchoolsListAgainState extends State<SchoolsListAgain> {
       if (widget.isSearching)
         schools = allItems.findSchoolsByName(widget.searchText);
       else
-        schools = allItems.items;
+        schools = allItems.schools;
 
       return ListView.builder(
         itemCount: schools.length,

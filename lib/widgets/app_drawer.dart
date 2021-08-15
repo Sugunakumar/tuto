@@ -26,8 +26,7 @@ class AppDrawer extends StatelessWidget {
             leading: Icon(Icons.shop),
             title: Text('Schools'),
             onTap: () {
-              Navigator.of(context)
-                  .pushReplacementNamed(SchoolOverviewScreen.routeName);
+              //Navigator.of(context).pushReplacementNamed(SchoolOverviewScreen.routeName);
             },
           ),
           Divider(),

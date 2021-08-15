@@ -1,10 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:tuto/models/models.dart';
+import 'package:tuto/new_providers/book.dart';
+
+import 'package:tuto/new_providers/school.dart';
+
+import 'package:tuto/providers/auth.dart';
 
 import '../data/constants.dart';
-import '../common/utils.dart';
 
 class Books with ChangeNotifier {
   final db = FirebaseFirestore.instance;
@@ -38,21 +41,36 @@ class Books with ChangeNotifier {
     return _books.firstWhere((prod) => prod.id == id);
   }
 
-  Future<void> fetchAndSetBooks() async {
-    String currentUserId = FirebaseAuth.instance.currentUser.uid;
-    print("fetchAndSetBooks");
+  Future<void> fetchAndSetBooks(Auth auth, School school) async {
     final List<Book> loadedBooks = [];
+    var snapshot;
     try {
-      final snapshot = await db.collection(booksTableName).get();
-      if (snapshot.size == 0) return;
-      final userFavSnapshot =
-          await db.collection(membersTableName).doc(currentUserId).get();
+      // teacher
 
-      List<dynamic> fav = userFavSnapshot.data().containsKey('favorites')
-          ? userFavSnapshot.get('favorites')
-          : null;
+      if (school != null) {
+        List<String> gradeS = school.findGradesForClasses(school.classes);
+        print('grades : ' + gradeS.toString());
+
+        snapshot = await db
+            .collection(booksTableName)
+            .where('grade', whereIn: gradeS)
+            .get();
+      } else if (auth.isAdmin())
+        snapshot = await db.collection(booksTableName).get();
+      else
+        print('to be handled');
+
+      if (snapshot.size == 0) return;
+      // final userFavSnapshot =
+      //     await db.collection(membersTableName).doc(currentUserId).get();
+
+      // List<dynamic> fav = userFavSnapshot.data().containsKey('favorites')
+      //     ? userFavSnapshot.get('favorites')
+      //     : null;
 
       //print("fav : " + fav.toString());
+
+      print("fetchAndSetBooks found : " + snapshot.size.toString());
 
       snapshot.docs.forEach((doc) async {
         loadedBooks.add(
@@ -74,26 +92,10 @@ class Books with ChangeNotifier {
         //print(doc.id);
       });
 
-      // final snapshotQ =
-      //     await FirebaseFirestore.instance.collectionGroup("questions").get();
-      // snapshotQ.docs.forEach((element) {
-      //   print("questions : " + element.get("answer"));
-      // });
-
-      // final snapshotChap =
-      //     await FirebaseFirestore.instance.collectionGroup("chapters").get();
-      // snapshotChap.docs.forEach((element) {
-      //   print("chapters : " + element.get("title"));
-      // });
-
-      // final snapshottrial = await FirebaseFirestore.instance
-      //     .collection(bookTable)
-      //     .doc("1Lf87x0AKGdW4CDnzkHc")
-      //     .collection("chapters")
-      //     .get();
-      // snapshottrial.docs.forEach((element) {
-      //   print("plain way : " + element.get("title"));
-      // });
+      // for (var bookId in bookIds) {
+      //   final itemIndex = loadedBooks.indexWhere((item) => item.id == bookId);
+      //   loadedBooks.insert(0, loadedBooks.removeAt(itemIndex));
+      // }
 
       _books = loadedBooks;
       notifyListeners();
@@ -105,12 +107,12 @@ class Books with ChangeNotifier {
   Future<void> addBook(Book book) async {
     final newBook = {
       'grade': book.grade,
-      'subject': book.subject.capitalizeFirstofEach,
-      'title': book.title.capitalizeFirstofEach,
+      'subject': book.subject,
+      'title': book.title,
       'description': book.description,
       'pages': book.pages,
-      'editor': book.editor.inFirstLetterCaps,
-      'publisher': book.publisher.capitalizeFirstofEach,
+      'editor': book.editor,
+      'publisher': book.publisher,
       'imageUrl': book.imageUrl
     };
 
@@ -121,12 +123,12 @@ class Books with ChangeNotifier {
       final newBookList = Book(
         id: addedBook.id,
         grade: book.grade,
-        subject: book.subject.capitalizeFirstofEach,
-        title: book.title.capitalizeFirstofEach,
+        subject: book.subject,
+        title: book.title,
         description: book.description,
         pages: book.pages,
-        editor: book.editor.inFirstLetterCaps,
-        publisher: book.publisher.capitalizeFirstofEach,
+        editor: book.editor,
+        publisher: book.publisher,
         imageUrl: book.imageUrl,
       );
       //_books.add(newBookList);

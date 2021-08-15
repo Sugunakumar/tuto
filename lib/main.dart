@@ -3,31 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:tuto/new_providers/book.dart';
+
 import 'package:tuto/new_providers/books.dart';
-import 'package:tuto/new_providers/chapter.dart';
-import 'package:tuto/new_providers/class.dart';
-import 'package:tuto/new_providers/school.dart';
+
 import 'package:tuto/new_providers/schools.dart';
-import 'package:tuto/new_providers/teachers.dart';
+import 'package:tuto/screens/edit/edit_book.dart';
 import 'package:tuto/screens/edit/edit_class.dart';
 import 'package:tuto/screens/edit/edit_school.dart';
-import 'package:tuto/screens/edit/edit_teacher.dart';
-import 'package:tuto/screens/overview/schools_overview.dart';
+import 'package:tuto/screens/edit/edit_schoolTeacher.dart';
+
 import 'package:tuto/screens/overview/home_page.dart';
 import 'package:tuto/screens/profile/class_profile.dart';
 import 'package:tuto/screens/profile/school_profile.dart';
-import 'package:tuto/widgets/search_list.dart';
+import 'package:tuto/screens/trails_screen.dart';
+//import 'package:tuto/screens/trails_screen.dart';
 import 'providers/auth.dart';
-import 'screens/profile/chapter_profile.dart';
-import 'screens/edit/edit_chapter.dart';
-import 'screens/edit/edit_question.dart';
-import 'screens/cart_screen.dart';
-import 'screens/overview/books_overview.dart';
-import 'screens/profile/book_profile.dart';
-import 'screens/orders_screen.dart';
-import 'screens/user_products_screen.dart';
-import 'screens/edit/edit_book.dart';
+
 import 'screens/auth_screen.dart';
 import 'screens/splash.dart';
 
@@ -49,40 +40,41 @@ class MyApp extends StatelessWidget {
         // list of schools
         //Provider(create: (context) => Schools()..fetchAndSet()),
         ChangeNotifierProvider(create: (context) => Schools()),
+        ChangeNotifierProvider(create: (context) => Books()),
         //Provider(create: (context) => Books()),
         //Provider(create: (context) => ClassNotifier()),
-        ChangeNotifierProvider(create: (context) => SchoolNotifier()),
-        ChangeNotifierProxyProvider<SchoolNotifier, ClassNotifier>(
-          create: (context) => ClassNotifier(),
-          update: (ctx, school, previousClass) {
-            previousClass.school = school.school;
-            return previousClass;
-          },
-        ),
-        ChangeNotifierProxyProvider<SchoolNotifier, Teachers>(
-          create: (context) => Teachers(),
-          update: (ctx, school, previousTeacher) {
-            previousTeacher.school = school.school;
-            return previousTeacher;
-          },
-        ),
-        ChangeNotifierProxyProvider<ClassNotifier, BookNotifier>(
-          create: (context) => BookNotifier(),
-          update: (ctx, classNoti, bookNoti) {
-            bookNoti.school = classNoti.school;
-            bookNoti.clazz = classNoti.clazz;
-            return bookNoti;
-          },
-        ),
-        ChangeNotifierProxyProvider<BookNotifier, ChapterNotifier>(
-          create: (context) => ChapterNotifier(),
-          update: (ctx, bookNoti, chapterNoti) {
-            chapterNoti.school = bookNoti.school;
-            chapterNoti.clazz = bookNoti.clazz;
-            chapterNoti.book = bookNoti.book;
-            return chapterNoti;
-          },
-        ),
+        // ChangeNotifierProvider(create: (context) => SchoolNotifier()),
+        // ChangeNotifierProxyProvider<SchoolNotifier, ClassNotifier>(
+        //   create: (context) => ClassNotifier(),
+        //   update: (ctx, school, previousClass) {
+        //     previousClass.school = school.school;
+        //     return previousClass;
+        //   },
+        // ),
+        // ChangeNotifierProxyProvider<SchoolNotifier, Teachers>(
+        //   create: (context) => Teachers(),
+        //   update: (ctx, school, previousTeacher) {
+        //     previousTeacher.school = school.school;
+        //     return previousTeacher;
+        //   },
+        // ),
+        // ChangeNotifierProxyProvider<ClassNotifier, BookNotifier>(
+        //   create: (context) => BookNotifier(),
+        //   update: (ctx, classNoti, bookNoti) {
+        //     bookNoti.school = classNoti.school;
+        //     bookNoti.clazz = classNoti.clazz;
+        //     return bookNoti;
+        //   },
+        // ),
+        // ChangeNotifierProxyProvider<BookNotifier, ChapterNotifier>(
+        //   create: (context) => ChapterNotifier(),
+        //   update: (ctx, bookNoti, chapterNoti) {
+        //     chapterNoti.school = bookNoti.school;
+        //     chapterNoti.clazz = bookNoti.clazz;
+        //     chapterNoti.book = bookNoti.book;
+        //     return chapterNoti;
+        //   },
+        // ),
         //ChangeNotifierProvider(create: (context) => BookNotifier()),
 
         //Provider(create: (context) => School()),
@@ -173,11 +165,21 @@ class MyApp extends StatelessWidget {
                               // Error handling
                               return Center(child: Text('An Error occured'));
                             } else {
+                              //return AutocompleteExampleApp();
+
                               //return ProductsOverviewScreen();
                               //return MyHomePage();
                               //return profilePage();
-                              //return MyHomePage();
+                              //return HomePage();
+                              //if (authData.currentMember.schoolId == null)
+
                               return HomeScreen();
+                              //else if (authData.currentMember.classIds == null)
+                              //else
+                              //  return SchoolScreen(schoolId);
+                              //else
+                              //return ClassScreen();
+
                             }
                           })
                       : HomeScreen();
@@ -185,15 +187,16 @@ class MyApp extends StatelessWidget {
                 return AuthScreen();
               }),
           routes: {
-            SchoolOverviewScreen.routeName: (ctx) => SchoolOverviewScreen(),
+            //SchoolOverviewScreen.routeName: (ctx) => SchoolOverviewScreen(),
             HomeScreen.routeName: (ctx) => HomeScreen(),
             //ProductsOverviewScreen.routeName: (ctx) => ProductsOverviewScreen(),
-            BookProfile.routeName: (ctx) => BookProfile(),
-            ChapterProfile.routeName: (ctx) => ChapterProfile(),
-            CartScreen.routeName: (ctx) => CartScreen(),
-            OrdersScreen.routeName: (ctx) => OrdersScreen(),
-            //UserProductsScreen.routeName: (ctx) => UserProductsScreen(),
-            // Profile
+            // BookProfile.routeName: (ctx) => BookProfile(),
+            // ChapterProfile.routeName: (ctx) => ChapterProfile(),
+            // CartScreen.routeName: (ctx) => CartScreen(),
+            // OrdersScreen.routeName: (ctx) => OrdersScreen(),
+            // //UserProductsScreen.routeName: (ctx) => UserProductsScreen(),
+
+            // // Profile
             SchoolProfile.routeName: (ctc) => SchoolProfile(),
             ClassProfile.routeName: (ctc) => ClassProfile(),
 
@@ -202,10 +205,11 @@ class MyApp extends StatelessWidget {
 
             // Edit Screen
             EditBookScreen.routeName: (ctx) => EditBookScreen(),
-            EditChapterScreen.routeName: (ctx) => EditChapterScreen(),
-            EditQuestionScreen.routeName: (ctx) => EditQuestionScreen(),
+            // EditChapterScreen.routeName: (ctx) => EditChapterScreen(),
+            // EditQuestionScreen.routeName: (ctx) => EditQuestionScreen(),
             EditSchoolScreen.routeName: (ctx) => EditSchoolScreen(),
-            EditTeacherScreen.routeName: (ctx) => EditTeacherScreen(),
+            EditSchoolTeacherScreen.routeName: (ctx) =>
+                EditSchoolTeacherScreen(),
             EditClassScreen.routeName: (ctx) => EditClassScreen(),
           }),
     );
