@@ -1,14 +1,13 @@
-// class Utils {
-//   String capitalize(String s) => (s != null && s.length > 1)
-//       ? s[0].toUpperCase() + s.substring(1)
-//       : s != null ? s.toUpperCase() : null;
-// }
+import 'package:tuto/new_providers/book.dart';
+import 'package:tuto/new_providers/classBook.dart';
 
-// extension CapExtension on String {
-//   String get inFirstLetterCaps =>
-//       '${this[0].toUpperCase()}${this.substring(1)}';
-//   String get allInCaps => this.toUpperCase();
-//   String get capitalizeFirstofEach =>
-//       this.split(" ").map((str) => str.inFirstLetterCaps).join(" ");
-//   String get image => this[0].toUpperCase();
-//}
+List<Book> classBookToFullBook(
+    List<ClassBook> classBooks, List<Book> fullBooks) {
+  List<Book> _books = [];
+  if (classBooks != null)
+    classBooks.forEach((classBook) {
+      _books
+          .add(fullBooks.firstWhere((fullbook) => fullbook.id == classBook.id));
+    });
+  return _books;
+}

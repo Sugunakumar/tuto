@@ -37,16 +37,25 @@ class Books with ChangeNotifier {
         .toList();
   }
 
+  List<Book> findBooksByGrade(String searchText) {
+    if (searchText.isEmpty) {
+      return _books.toList();
+    }
+    return _books
+        .where((s) => s.grade.toLowerCase().contains(searchText.toLowerCase()))
+        .toList();
+  }
+
   Book findBookById(String id) {
     return _books.firstWhere((prod) => prod.id == id);
   }
 
-  Future<void> fetchAndSetBooks(Auth auth, School school) async {
+  Future<List<Book>> fetchAndSetBooks(Auth auth, School school) async {
     final List<Book> loadedBooks = [];
     var snapshot;
     try {
       // teacher
-
+      print("fetchAndSetBooks ");
       if (school != null) {
         List<String> gradeS = school.findGradesForClasses(school.classes);
         print('grades : ' + gradeS.toString());
@@ -60,7 +69,7 @@ class Books with ChangeNotifier {
       else
         print('to be handled');
 
-      if (snapshot.size == 0) return;
+      if (snapshot.size == 0) return loadedBooks;
       // final userFavSnapshot =
       //     await db.collection(membersTableName).doc(currentUserId).get();
 
@@ -98,7 +107,9 @@ class Books with ChangeNotifier {
       // }
 
       _books = loadedBooks;
+
       notifyListeners();
+      return _books;
     } catch (e) {
       throw (e);
     }

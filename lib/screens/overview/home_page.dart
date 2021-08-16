@@ -62,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen>
     _tabController = TabController(length: 2, vsync: this, initialIndex: 0);
     _tabController.addListener(_handleTabIndex);
     _isSearching = false;
+    super.initState();
   }
 
   @override

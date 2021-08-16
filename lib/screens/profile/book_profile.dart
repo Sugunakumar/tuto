@@ -7,14 +7,18 @@ import '../../providers/auth.dart';
 import '../edit/edit_chapter.dart';
 import '../../widgets/list/chapters_list.dart';
 
+// Book _loadedBook;
+
 // class BookProfile extends StatefulWidget {
 //   static const routeName = '/book-chapters';
+//   static String bookId;
+
 
 //   @override
 //   _BookProfileState createState() => _BookProfileState();
 // }
 
-// class _BookProfileState extends State<BookProfile> {
+// class _BookProfileState extends State<BookProfile> with SingleTickerProviderStateMixin  {
 //   @override
 //   Widget build(BuildContext context) {
 //     final authData = Provider.of<Auth>(context, listen: false);

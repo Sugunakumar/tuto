@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 List<Role> getRoleByString(List<String> roleStr) {
   List<Role> roleRole = [];
@@ -51,7 +50,7 @@ const tables = {
 
 const schoolsTableName = "schools";
 const classesTableName = "classes";
-const booksTableName = "products";
+const booksTableName = "books";
 const chaptersTableName = "chapters";
 const subjectsTableName = "subjects";
 const teachersTableName = "teachers";

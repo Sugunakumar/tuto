@@ -48,6 +48,18 @@ class School with ChangeNotifier {
     return _classes.firstWhere((i) => i.id == id);
   }
 
+  List<Class> findClassByNamePattern(String pattern) {
+    return _classes
+        .where((s) =>
+            s.name.toLowerCase().contains(pattern.toLowerCase()) ||
+            s.icon.toLowerCase().contains(pattern.toLowerCase()))
+        .toList();
+    // ||
+    // s.classTeacher.user.username
+    //     .toLowerCase()
+    //     .contains(pattern.toLowerCase()))
+  }
+
   List<String> findGradesForClasses(List<Class> classes) {
     List<String> grades = [];
     _classes.forEach((element) {

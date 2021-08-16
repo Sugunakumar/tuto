@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tuto/common/utils.dart';
 import 'package:tuto/new_providers/book.dart';
 import 'package:tuto/new_providers/books.dart';
+import 'package:tuto/new_providers/class.dart';
+import 'package:tuto/new_providers/classBook.dart';
 import 'package:tuto/new_providers/school.dart';
 import 'package:tuto/new_providers/schools.dart';
 import 'package:tuto/providers/auth.dart';
+import 'package:tuto/screens/profile/school_profile.dart';
 
 import 'package:tuto/widgets/item/book_item.dart';
 
 class BookListTab extends StatelessWidget {
   final bool isSearching;
   final String searchText;
-  BookListTab(this.isSearching, this.searchText, {Key key}) : super(key: key);
+  final Class clazz;
+  BookListTab(this.isSearching, this.searchText, {this.clazz, Key key})
+      : super(key: key);
 
   Future<void> _refresh(BuildContext context) async {
     final auth = context.watch<Auth>();
@@ -23,14 +29,26 @@ class BookListTab extends StatelessWidget {
     } else
       await Provider.of<Books>(context, listen: false)
           .fetchAndSetBooks(auth, null);
+    if (clazz != null) if (clazz.books == null)
+      await clazz.fetchAndSetClassBooks();
   }
 
   List<Book> loadBooks(BuildContext context) {
-    final booksData = Provider.of<Books>(context, listen: false);
+    List<Book> _books = [];
+    if (clazz != null) {
+      if (clazz.books != null) if (clazz.books.isNotEmpty)
+        _books = classBookToFullBook(clazz.books, context.watch<Books>().books);
+      _books = [];
+    } else
+      _books = context.watch<Books>().books;
+
     if (isSearching)
-      return booksData.findBooksByName(searchText);
+      return _books
+          .where(
+              (s) => s.title.toLowerCase().contains(searchText.toLowerCase()))
+          .toList();
     else
-      return booksData.books;
+      return _books;
   }
 
   @override
@@ -40,7 +58,7 @@ class BookListTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => _refresh(context),
       child: books.isNotEmpty
-          ? BookList(books)
+          ? BookList(loadBooks(context))
           : FutureBuilder(
               future: _refresh(context),
               builder: (ctx, dataSnapshot) {
@@ -57,6 +75,25 @@ class BookListTab extends StatelessWidget {
                 }
               },
             ),
+
+      //   child: books.isNotEmpty
+      // ? BookList(books)
+      // : FutureBuilder(
+      //     future: _refresh(context),
+      //     builder: (ctx, dataSnapshot) {
+      //       if (dataSnapshot.connectionState == ConnectionState.waiting) {
+      //         return Center(
+      //           child: CircularProgressIndicator(),
+      //         );
+      //       } else if (dataSnapshot.error != null) {
+      //         // Error handling
+      //         return Center(child: Text('An Error occured'));
+      //       } else {
+      //         print('Going through FutureBuilder');
+      //         return BookList(loadBooks(context));
+      //       }
+      //     },
+      //   ),
     );
   }
 }

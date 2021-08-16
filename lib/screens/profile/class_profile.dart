@@ -88,11 +88,6 @@ class _ClassProfileState extends State<ClassProfile>
 
     final auth = Provider.of<Auth>(context, listen: false);
 
-    this.appBarTitle = new Text(
-      _loadedClass.name,
-      style: new TextStyle(color: Colors.white),
-    );
-
     return SafeArea(
       top: false,
       child: DefaultTabController(
@@ -102,7 +97,11 @@ class _ClassProfileState extends State<ClassProfile>
           body: TabBarView(
             controller: _tabController,
             children: [
-              BookListTab(_isSearching, _searchText),
+              BookListTab(
+                _isSearching,
+                _searchText,
+                clazz: _loadedClass,
+              ),
               Center(
                 child: Text('Students'),
               ),

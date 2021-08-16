@@ -9,7 +9,6 @@ import 'package:tuto/screens/edit/edit_class.dart';
 import 'package:tuto/screens/edit/edit_schoolTeacher.dart';
 import 'package:tuto/widgets/list/teachers_list.dart';
 
-import '../../screens/edit/edit_school.dart';
 import '../../widgets/list/classes_list.dart';
 
 School _loadedSchool;
@@ -86,11 +85,6 @@ class _SchoolProfileState extends State<SchoolProfile>
     final auth = Provider.of<Auth>(context, listen: false);
     // await auth.fetchAndSetMembers();
 
-    this.appBarTitle = new Text(
-      _loadedSchool.name,
-      style: new TextStyle(color: Colors.white),
-    );
-
     return SafeArea(
       top: false,
       child: DefaultTabController(
@@ -100,8 +94,8 @@ class _SchoolProfileState extends State<SchoolProfile>
           body: TabBarView(
             controller: _tabController,
             children: [
-              TeachersTab(_loadedSchool, _isSearching, this._searchText),
-              ClassesTab(_loadedSchool, _isSearching, this._searchText),
+              TeachersTab(_loadedSchool, _isSearching, _searchText),
+              ClassesTab(_loadedSchool, _isSearching, _searchText),
             ],
           ),
           floatingActionButton: _bottomButtons(auth),
@@ -113,6 +107,7 @@ class _SchoolProfileState extends State<SchoolProfile>
   Widget buildBar(BuildContext context) {
     return new AppBar(
       title: appBarTitle,
+      centerTitle: true,
       actions: <Widget>[
         new IconButton(
           icon: actionIcon,
@@ -123,7 +118,7 @@ class _SchoolProfileState extends State<SchoolProfile>
                   Icons.close,
                   color: Colors.white,
                 );
-                appBarTitle = new TextField(
+                this.appBarTitle = new TextField(
                   controller: _searchQuery,
                   style: new TextStyle(
                     color: Colors.white,
@@ -140,13 +135,13 @@ class _SchoolProfileState extends State<SchoolProfile>
             });
           },
         ),
-        IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: () {
-            Navigator.of(context).pushNamed(EditSchoolScreen.routeName,
-                arguments: _loadedSchool.id);
-          },
-        ),
+        // IconButton(
+        //   icon: const Icon(Icons.edit),
+        //   onPressed: () {
+        //     Navigator.of(context).pushNamed(EditSchoolScreen.routeName,
+        //         arguments: _loadedSchool.id);
+        //   },
+        // ),
       ],
       bottom: TabBar(
         controller: _tabController,

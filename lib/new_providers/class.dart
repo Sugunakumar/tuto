@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:tuto/data/constants.dart';
 import 'package:tuto/new_providers/book.dart';
 import 'package:tuto/new_providers/books.dart';
@@ -10,6 +11,7 @@ import 'package:tuto/new_providers/classStudent.dart';
 import 'package:tuto/new_providers/classTeacher.dart';
 import 'package:tuto/new_providers/schoolTeacher.dart';
 import 'package:tuto/providers/auth.dart';
+import 'package:tuto/screens/profile/school_profile.dart';
 
 class Class with ChangeNotifier {
   final String id;
@@ -40,46 +42,48 @@ class Class with ChangeNotifier {
     return _books.toList();
   }
 
-  List<ClassBook> findAllClassBooksByName(String searchText) {
-    if (searchText.isEmpty) {
-      return _books.toList();
-    }
-    return _books
-        .where((s) =>
-            s.book.title.toLowerCase().contains(searchText.toLowerCase()))
-        .toList();
-  }
+  // List<ClassBook> findAllClassBooksByName(String searchText) {
+  //   if (searchText.isEmpty) {
+  //     return _books.toList();
+  //   }
+  //   return _books
+  //       .where((s) =>
+  //           s.book.title.toLowerCase().contains(searchText.toLowerCase()))
+  //       .toList();
+  // }
 
   ClassBook findClassBookById(String id) {
-    return _books.firstWhere((i) => i.book.id == id);
+    return _books.firstWhere((i) => i.id == id);
   }
 
-  Future<void> fetchAndSetClassBooks(String schoolId, List<Book> books) async {
-    print("fetchAndSetFilteredClassBooks");
-    print("schoolId " + schoolId);
+  Future<List<ClassBook>> fetchAndSetClassBooks() async {
+    print("fetchAndSetFilteredClassBooks : " + SchoolProfile.schoolId);
+    print("fetchAndSetFiltered : " + id);
+
+    //print("schoolId " + schoolId);
     final List<ClassBook> loaded = [];
     try {
       final classBookSnapshot = await db
           .collection(schoolsTableName)
-          .doc(schoolId)
+          .doc(SchoolProfile.schoolId)
           .collection(classesTableName)
           .doc(this.id)
           .collection(booksTableName)
           .get();
 
+      print("classBookSnapshot : " + classBookSnapshot.size.toString());
+
       if (classBookSnapshot.size == 0) {
         _books = loaded;
-        return;
+        return loaded;
       }
 
       classBookSnapshot.docs.forEach((doc) {
         loaded.add(
           ClassBook(
-            joiningDate: DateTime.parse(doc.get('joiningDate')),
-            book: books.firstWhere((prod) => prod.id == id, orElse: () {
-              print('Book not already added. Need to fetch book');
-              return null;
-            }),
+            id: doc.id,
+            joiningDate:
+                DateTime.parse(doc.get('joiningDate').toDate().toString()),
           ),
         );
       });
@@ -89,6 +93,8 @@ class Class with ChangeNotifier {
       print("_books : " + _books.length.toString());
 
       notifyListeners();
+
+      return _books;
     } catch (e) {
       print(e.toString());
       throw (e);
@@ -164,7 +170,7 @@ class Class with ChangeNotifier {
   Future<void> addClassBook(ClassBook classBook, String schoolId) async {
     final newClassBook = {
       'joiningDate': classBook.joiningDate,
-      'book': classBook.book,
+      'id': classBook.id,
       'teacher': classBook.teacher,
     };
 
@@ -178,7 +184,7 @@ class Class with ChangeNotifier {
           .add(newClassBook);
       final newClassBookList = ClassBook(
         joiningDate: classBook.joiningDate,
-        book: classBook.book,
+        id: classBook.id,
         teacher: classBook.teacher,
       );
 
@@ -219,8 +225,7 @@ class Class with ChangeNotifier {
   // }
 
   Future<void> deleteClassBook(String id) async {
-    final existingClassBookIndex =
-        _books.indexWhere((prod) => prod.book.id == id);
+    final existingClassBookIndex = _books.indexWhere((prod) => prod.id == id);
     var existingClassBook = _books[existingClassBookIndex];
     _books.removeAt(existingClassBookIndex);
     notifyListeners();

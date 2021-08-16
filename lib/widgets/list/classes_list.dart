@@ -20,11 +20,19 @@ class ClassesTab extends StatelessWidget {
     await this.loadedSchool.fetchAndSetClasses(auth);
   }
 
+  List<Class> loadClasses(BuildContext context) {
+    if (isSearching)
+      return loadedSchool.findClassByNamePattern(searchText);
+    else
+      return loadedSchool.classes;
+  }
+
   @override
   Widget build(BuildContext context) {
+    List<Class> classes = loadClasses(context);
     return RefreshIndicator(
       onRefresh: () => _refreshProducts(context),
-      child: this.loadedSchool.classes.isEmpty
+      child: classes.isEmpty
           ? FutureBuilder(
               future: _refreshProducts(context),
               builder: (ctx, dataSnapshot) {
@@ -37,10 +45,10 @@ class ClassesTab extends StatelessWidget {
                   print(dataSnapshot.error.toString());
                   return Center(child: Text('An Error occured'));
                 } else {
-                  return ClassesList(loadedSchool.classes);
+                  return ClassesList(loadClasses(context));
                 }
               })
-          : ClassesList(loadedSchool.classes),
+          : ClassesList(classes),
     );
   }
 }
