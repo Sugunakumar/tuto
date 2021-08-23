@@ -3,10 +3,11 @@ import 'package:provider/provider.dart';
 
 import 'package:tuto/new_providers/class.dart';
 import 'package:tuto/new_providers/schools.dart';
-import 'package:tuto/screens/edit/edit_book.dart';
+
+import 'package:tuto/screens/edit/edit_classBook.dart';
 import 'package:tuto/screens/profile/school_profile.dart';
 import 'package:tuto/widgets/list/books_list.dart';
-import 'package:tuto/widgets/list/teachers_list.dart';
+
 
 import '../../providers/auth.dart';
 
@@ -22,15 +23,15 @@ class ClassProfile extends StatefulWidget {
 
 class _ClassProfileState extends State<ClassProfile>
     with SingleTickerProviderStateMixin {
+  
   TabController _tabController;
-
   Icon actionIcon = new Icon(
     Icons.search,
     color: Colors.white,
   );
   bool _isSearching;
   String _searchText = "";
-  Widget appBarTitle = new Text("WorkBook");
+  Widget appBarTitle;
 
   final TextEditingController _searchQuery = new TextEditingController();
 
@@ -76,7 +77,7 @@ class _ClassProfileState extends State<ClassProfile>
   @override
   Widget build(BuildContext context) {
     final classId = ModalRoute.of(context).settings.arguments as String;
-    print("classId : " + classId);
+    
     ClassProfile.classId = classId;
 
     _loadedClass = context
@@ -115,7 +116,7 @@ class _ClassProfileState extends State<ClassProfile>
 
   Widget buildBar(BuildContext context) {
     return new AppBar(
-      title: appBarTitle,
+      title: appBarTitle != null ? appBarTitle : new Text(_loadedClass.name),
       actions: <Widget>[
         new IconButton(
           icon: actionIcon,
@@ -143,13 +144,13 @@ class _ClassProfileState extends State<ClassProfile>
             });
           },
         ),
-        IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: () {
-            // Navigator.of(context).pushNamed(EditSchoolScreen.routeName,
-            //     arguments: loadedSchool.id);
-          },
-        ),
+        // IconButton(
+        //   icon: const Icon(Icons.edit),
+        //   onPressed: () {
+        //     // Navigator.of(context).pushNamed(EditSchoolScreen.routeName,
+        //     //     arguments: loadedSchool.id);
+        //   },
+        // ),
       ],
       bottom: TabBar(
         controller: _tabController,
@@ -185,7 +186,7 @@ class _ClassProfileState extends State<ClassProfile>
         shape: StadiumBorder(),
         onPressed: () {
           print('books & subjects');
-          Navigator.of(context).pushNamed(EditBookScreen.routeName);
+          Navigator.of(context).pushNamed(EditClassBookScreen.routeName);
         },
         child: Icon(
           Icons.add,

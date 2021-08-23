@@ -185,6 +185,7 @@ class Schools with ChangeNotifier {
             loaded.indexWhere((item) => item.id == auth.currentMember.schoolId);
         await loaded[itemIndex].fetchAndSetTeachers(auth);
         await loaded[itemIndex].fetchAndSetClasses(auth);
+        await loaded[itemIndex].fetchAndSetStudents(auth);
         loaded.insert(0, loaded.removeAt(itemIndex));
       }
 

@@ -109,7 +109,7 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
                   title: Text('An error occured!'),
                   content: Text('Something went wrong'),
                   actions: [
-                    FlatButton(
+                    TextButton(
                       child: Text('Okay'),
                       onPressed: () {
                         Navigator.of(context).pop();

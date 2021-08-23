@@ -21,10 +21,10 @@ class School with ChangeNotifier {
   String email;
   String phone;
 
-  List<Class> _classes = [];
-  List<SchoolTeacher> _teachers = [];
-  List<SchoolAdmin> _admins = [];
-  List<SchoolStudent> _students = [];
+  List<Class> _classes;
+  List<SchoolTeacher> _teachers;
+  List<SchoolAdmin> _admins;
+  List<SchoolStudent> _students;
 
   School({
     @required this.id,
@@ -44,8 +44,21 @@ class School with ChangeNotifier {
   List<SchoolAdmin> get admins => _admins;
   List<SchoolStudent> get students => _students;
 
+// ============================================ Utils =================================
+
   Class findClassById(String id) {
     return _classes.firstWhere((i) => i.id == id);
+  }
+
+  SchoolStudent findStudentById(String id) {
+    return _students.firstWhere((i) => i.user.id == id);
+  }
+
+  List<SchoolStudent> findStudentByNamePattern(String pattern) {
+    return _students
+        .where((s) =>
+            s.user.username.toLowerCase().contains(pattern.toLowerCase()))
+        .toList();
   }
 
   List<Class> findClassByNamePattern(String pattern) {
@@ -68,6 +81,18 @@ class School with ChangeNotifier {
     return grades;
   }
 
+  SchoolTeacher findTeacherById(String userId) {
+    return _teachers.firstWhere((i) => i.user.id == userId, orElse: () => null);
+  }
+
+  List<SchoolTeacher> findTeachersByNamePattern(String pattern) {
+    return _teachers
+        .where((s) =>
+            s.user.username.toLowerCase().contains(pattern.toLowerCase()))
+        .toList();
+  }
+
+// ============================================ Class =================================
   Future<List<Class>> fetchAndSetClasses(Auth auth) async {
     final List<Class> loaded = [];
     var snapshot;
@@ -171,7 +196,7 @@ class School with ChangeNotifier {
   }
 
   Future<void> updateClass(String classId, Class newItem) async {
-    final itemIndex = _classes.indexWhere((item) => item.id == id);
+    final itemIndex = _classes.indexWhere((item) => item.id == classId);
 
     if (itemIndex >= 0) {
       try {
@@ -182,8 +207,11 @@ class School with ChangeNotifier {
             .doc(classId)
             .update({
           'name': newItem.name,
-          'grade': newItem.grade,
-          'classTeacher': newItem.classTeacher,
+          'grade': getStringByGrade(newItem.grade),
+          'classTeacher': {
+            'joiningDate': DateTime.now(),
+            'userId': newItem.classTeacher.user.id
+          },
         });
         _classes[itemIndex] = newItem;
 
@@ -220,17 +248,6 @@ class School with ChangeNotifier {
 
 // ------------------------------------------------ Teachers ---------------------------------------
 
-  SchoolTeacher findTeacherById(String userId) {
-    return _teachers.firstWhere((i) => i.user.id == userId, orElse: () => null);
-  }
-
-  List<SchoolTeacher> findTeachersByNamePattern(String pattern) {
-    return _teachers
-        .where((s) =>
-            s.user.username.toLowerCase().contains(pattern.toLowerCase()))
-        .toList();
-  }
-
   Future<void> fetchAndSetTeachers(Auth auth) async {
     final List<SchoolTeacher> loaded = [];
     try {
@@ -263,12 +280,10 @@ class School with ChangeNotifier {
                 ? doc.get('qualification')
                 : null,
             experience: doc.data().containsKey('experience')
-                ? int.parse(doc.get('experience'))
+                ? doc.get('experience')
                 : null,
             user: members.firstWhere((element) => element.id == doc.id),
-            salary: doc.data().containsKey('salary')
-                ? int.parse(doc.get('salary').toString())
-                : null,
+            salary: doc.data().containsKey('salary') ? doc.get('salary') : null,
             joiningDate:
                 DateTime.parse(doc.get('joiningDate').toDate().toString()),
           ),
@@ -285,7 +300,7 @@ class School with ChangeNotifier {
     }
   }
 
-  Future<void> addTeacher(SchoolTeacher schoolTeacher) async {
+  Future<void> addSchoolTeacher(SchoolTeacher schoolTeacher) async {
     try {
       // add/update schoolId in users collection
       await db.collection(membersTableName).doc(schoolTeacher.user.id).update({
@@ -319,7 +334,8 @@ class School with ChangeNotifier {
       );
 
       //_school.teacherIds.add(addedUser.id);
-      this.teachers.insert(0, newItemList);
+
+      _teachers.insert(0, newItemList);
 
       notifyListeners();
     } catch (e) {
@@ -358,28 +374,22 @@ class School with ChangeNotifier {
     notifyListeners();
 
     try {
-      // removing from school => teachers collections
-      // await db
-      //     .collection(School.tableName)
-      //     .doc(id)
-      //     .collection(Teacher.tableName)
-      //     .doc(userId)
-      //     .delete();
-      // existingItem = null;
-
       // remove from the school collection
-      await db.collection(schoolsTableName).doc(id).update({
-        'teachers': FieldValue.arrayRemove([userId]),
-        // scope for improvement get if the user is Admin and make line only if is admin
-        'admins': FieldValue.arrayRemove([userId]),
-      });
+      await db
+          .collection(schoolsTableName)
+          .doc(id)
+          .collection(teachersTableName)
+          .doc(existingItem.user.id)
+          .delete();
+
       // remove from the user collection
       await FirebaseFirestore.instance
           .collection(membersTableName)
           .doc(userId)
           .update({
-        'schools': FieldValue.arrayRemove([id]),
+        'schoolId': FieldValue.delete(),
       });
+      existingItem = null;
     } catch (e) {
       _teachers.insert(existingItemIndex, existingItem);
       notifyListeners();
@@ -387,40 +397,118 @@ class School with ChangeNotifier {
     }
   }
 
-  // ========================================= Admin ============================
+  // ========================================= School Student ============================
 
-  Future<void> addAdmin(Member addedUser, String qualification) async {
-    // add/update schoolId in users collection
-
+  Future<void> fetchAndSetStudents(Auth auth) async {
+    final List<SchoolStudent> loaded = [];
     try {
-      await db.collection(membersTableName).doc(addedUser.id).update({
+      final snapshot = await db
+          .collection(schoolsTableName)
+          .doc(this.id)
+          .collection(studentsTableName)
+          .get();
+      if (snapshot.size == 0) {
+        print("fetchAndSetStudents : No students to display");
+        _students = loaded;
+        return;
+      }
+
+      print("fetchAndSetStudents : " + snapshot.size.toString());
+
+      List<String> userIds = [];
+
+      snapshot.docs.forEach((doc) async {
+        userIds.add(doc.id);
+      });
+
+      List<Member> members = await auth.fetchAndSetMembers(memberIds: userIds);
+
+      snapshot.docs.forEach((doc) async {
+        userIds.add(doc.id);
+        loaded.add(
+          SchoolStudent(
+            fatherName: doc.get('fatherName'),
+            motherName: doc.get('motherName'),
+            previousSchool: doc.data().containsKey('previousSchool')
+                ? doc.get('previousSchool')
+                : null,
+            previousSchoolGrade: doc.data().containsKey('previousSchoolGrade')
+                ? getGradeByString(doc.get('previousSchoolGrade'))
+                : null,
+            studenNumber: doc.data().containsKey('studenNumber')
+                ? doc.get('studenNumber')
+                : null,
+            dateOfBirth:
+                DateTime.parse(doc.get('joiningDate').toDate().toString()),
+            joiningDate:
+                DateTime.parse(doc.get('joiningDate').toDate().toString()),
+            user: members.firstWhere((element) => element.id == doc.id),
+            totalFee: doc.data().containsKey('totalFee')
+                ? int.parse(doc.get('totalFee').toString())
+                : null,
+            paidFee: doc.data().containsKey('paidFee')
+                ? int.parse(doc.get('paidFee').toString())
+                : null,
+          ),
+        );
+      });
+
+      _students = loaded;
+
+      print("students set  : " + _students.length.toString());
+      notifyListeners();
+    } catch (e) {
+      print(e.toString());
+      throw (e);
+    }
+  }
+
+  Future<void> addSchoolStudent(SchoolStudent schoolStudent) async {
+    try {
+      // add/update schoolId in users collection
+      await db.collection(membersTableName).doc(schoolStudent.user.id).update({
         'schoolId': this.id,
-        'roles': FieldValue.arrayUnion(['schoolAdmin']),
+        'roles': FieldValue.arrayUnion(['student']),
       });
 
       final timestamp = DateTime.now();
 
-      // add teacher in schools collection
-
+      // add students in schools collection
       await db
           .collection(schoolsTableName)
           .doc(this.id)
-          .collection(adminsTableName)
-          .doc(addedUser.id)
+          .collection(studentsTableName)
+          .doc(schoolStudent.user.id)
           .set({
-        "joiningDate": timestamp,
+        'joiningDate': timestamp,
+        'fatherName': schoolStudent.fatherName,
+        'motherName': schoolStudent.motherName,
+        'previousSchoolName': schoolStudent.previousSchool,
+        'previousSchoolGrade':
+            getStringByGrade(schoolStudent.previousSchoolGrade),
+        'studentNumber': schoolStudent.studenNumber,
+        'dateOfBirth': schoolStudent.dateOfBirth,
+        //'totalFee': schoolStudent.totalFee,
+        //'paidFee': schoolStudent.paidFee,
       });
 
-      print('User ' + addedUser.username + ' user added as Teacher');
+      print('User ' + schoolStudent.user.username + ' user added as Student');
 
-      final newItemList = SchoolAdmin(
+      final newItemList = SchoolStudent(
         joiningDate: timestamp,
-        qualification: qualification,
-        user: addedUser,
+        fatherName: schoolStudent.fatherName,
+        motherName: schoolStudent.motherName,
+        previousSchool: schoolStudent.previousSchool,
+        previousSchoolGrade: schoolStudent.previousSchoolGrade,
+        dateOfBirth: schoolStudent.dateOfBirth,
+        studenNumber: schoolStudent.studenNumber,
+        // totalFee: schoolStudent.totalFee,
+        // paidFee: schoolStudent.paidFee,
+        user: schoolStudent.user,
       );
 
       //_school.teacherIds.add(addedUser.id);
-      this.admins.insert(0, newItemList);
+      _students.insert(0, newItemList);
 
       notifyListeners();
     } catch (e) {
@@ -429,42 +517,65 @@ class School with ChangeNotifier {
     }
   }
 
-  // ========================================= Students ============================
+  Future<void> updateStudent(String studentId, SchoolStudent newItem) async {
+    final itemIndex = _classes.indexWhere((item) => item.id == id);
 
-  Future<void> addStudent(SchoolStudent schoolStudent) async {
-    // add/update schoolId in users collection
+    if (itemIndex >= 0) {
+      try {
+        await db
+            .collection(schoolsTableName)
+            .doc(id)
+            .collection(studentsTableName)
+            .doc(studentId)
+            .update({
+          'joiningDate': newItem.joiningDate,
+          'fatherName': newItem.fatherName,
+          'motherName': newItem.motherName,
+          'previousSchoolName': newItem.previousSchool,
+          'previousSchoolGrade': newItem.previousSchoolGrade,
+          'studentNumber': newItem.studenNumber,
+          'dateOfBirth': newItem.dateOfBirth,
+          'totalFee': newItem.totalFee,
+          'paidFee': newItem.paidFee,
+        });
+        _students[itemIndex] = newItem;
+
+        notifyListeners();
+      } catch (e) {
+        print(e);
+        throw e;
+      }
+    } else {
+      print('No such item with id : ' + id);
+    }
+  }
+
+  Future<void> removeStudent(String userId) async {
+    final existingItemIndex = _students.indexWhere((i) => i.user.id == userId);
+    var existingItem = _students[existingItemIndex];
+    _students.removeAt(existingItemIndex);
+    notifyListeners();
 
     try {
-      await db.collection(membersTableName).doc(schoolStudent.user.id).update({
-        'schoolId': this.id,
-        'roles': FieldValue.arrayUnion(['student']),
-      });
-
-      final timestamp = DateTime.now();
-
-      // add teacher in schools collection
-
+      // remove from the school collection
       await db
           .collection(schoolsTableName)
-          .doc(this.id)
+          .doc(id)
           .collection(studentsTableName)
-          .doc(schoolStudent.user.id)
-          .set({
-        'fatherName': schoolStudent.fatherName,
-        'motherName': schoolStudent.motherName,
-        'previousSchool': schoolStudent.previousSchool,
-        'previousSchoolGrade': schoolStudent.previousSchoolGrade,
-        'studenNumber': schoolStudent.studenNumber,
-        'joiningDate': timestamp,
+          .doc(existingItem.user.id)
+          .delete();
+
+      // remove from the user collection
+      await FirebaseFirestore.instance
+          .collection(membersTableName)
+          .doc(userId)
+          .update({
+        'schoolId': FieldValue.delete(),
       });
-
-      print('User ' + schoolStudent.user.username + ' user added as Teacher');
-
-      this.students.insert(0, schoolStudent);
-
-      notifyListeners();
+      existingItem = null;
     } catch (e) {
-      print(e);
+      _students.insert(existingItemIndex, existingItem);
+      notifyListeners();
       throw e;
     }
   }

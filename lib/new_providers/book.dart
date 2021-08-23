@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tuto/new_providers/models.dart';
 import 'package:tuto/new_providers/chapter.dart';
+import 'package:tuto/new_providers/schoolTeacher.dart';
 
 import '../data/constants.dart';
 
@@ -16,9 +17,10 @@ class Book with ChangeNotifier {
   final int pages;
   final String editor;
   final String publisher;
+  //final String guidedBy;
   final String imageUrl;
 
-  List<Chapter> _chapters = [];
+  List<Chapter> _chapters;
 
   Book({
     @required this.id,
@@ -31,6 +33,8 @@ class Book with ChangeNotifier {
     @required this.publisher,
     @required this.imageUrl,
   });
+
+  List<Chapter> get chapters => _chapters;
 
   // Future<void> toggleFavoriteStatus(String userId) async {
   //   final oldStatus = isFavorite;
@@ -107,6 +111,8 @@ class Book with ChangeNotifier {
       'index': chapter.index,
       'title': chapter.title,
     };
+
+    print('chapter : ' + chapter.title);
 
     try {
       final addedChapter = await FirebaseFirestore.instance

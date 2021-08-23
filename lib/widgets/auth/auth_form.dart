@@ -94,6 +94,7 @@ class _AuthFormState extends State<AuthForm> {
                       _userEmail = value;
                     },
                   ),
+                  
                   if (!_isLogin)
                     TextFormField(
                       key: ValueKey('username'),

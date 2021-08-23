@@ -5,14 +5,20 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:tuto/new_providers/books.dart';
+import 'package:tuto/new_providers/class.dart';
+import 'package:tuto/new_providers/school.dart';
 
 import 'package:tuto/new_providers/schools.dart';
 import 'package:tuto/screens/edit/edit_book.dart';
+import 'package:tuto/screens/edit/edit_chapter.dart';
 import 'package:tuto/screens/edit/edit_class.dart';
+import 'package:tuto/screens/edit/edit_classBook.dart';
 import 'package:tuto/screens/edit/edit_school.dart';
+import 'package:tuto/screens/edit/edit_schoolStudent.dart';
 import 'package:tuto/screens/edit/edit_schoolTeacher.dart';
 
 import 'package:tuto/screens/overview/home_page.dart';
+import 'package:tuto/screens/profile/book_profile.dart';
 import 'package:tuto/screens/profile/class_profile.dart';
 import 'package:tuto/screens/profile/school_profile.dart';
 import 'package:tuto/screens/trails_screen.dart';
@@ -41,6 +47,7 @@ class MyApp extends StatelessWidget {
         //Provider(create: (context) => Schools()..fetchAndSet()),
         ChangeNotifierProvider(create: (context) => Schools()),
         ChangeNotifierProvider(create: (context) => Books()),
+
         //Provider(create: (context) => Books()),
         //Provider(create: (context) => ClassNotifier()),
         // ChangeNotifierProvider(create: (context) => SchoolNotifier()),
@@ -199,6 +206,7 @@ class MyApp extends StatelessWidget {
             // // Profile
             SchoolProfile.routeName: (ctc) => SchoolProfile(),
             ClassProfile.routeName: (ctc) => ClassProfile(),
+            BookProfile.routeName: (ctc) => BookProfile(),
 
             // Overview
             //ClassesOverviewScreen.routeName: (ctc) => ClassesOverviewScreen(),
@@ -211,6 +219,10 @@ class MyApp extends StatelessWidget {
             EditSchoolTeacherScreen.routeName: (ctx) =>
                 EditSchoolTeacherScreen(),
             EditClassScreen.routeName: (ctx) => EditClassScreen(),
+            EditSchoolStudentScreen.routeName: (ctx) =>
+                EditSchoolStudentScreen(),
+            EditClassBookScreen.routeName: (ctx) => EditClassBookScreen(),
+            EditChapterScreen.routeName: (ctx) => EditChapterScreen(),
           }),
     );
   }

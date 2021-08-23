@@ -4,22 +4,24 @@ import 'package:tuto/common/utils.dart';
 import 'package:tuto/new_providers/book.dart';
 import 'package:tuto/new_providers/books.dart';
 import 'package:tuto/new_providers/class.dart';
-import 'package:tuto/new_providers/classBook.dart';
+
 import 'package:tuto/new_providers/school.dart';
 import 'package:tuto/new_providers/schools.dart';
 import 'package:tuto/providers/auth.dart';
-import 'package:tuto/screens/profile/school_profile.dart';
 
 import 'package:tuto/widgets/item/book_item.dart';
 
 class BookListTab extends StatelessWidget {
+  static Class clazzStatic;
+
   final bool isSearching;
   final String searchText;
   final Class clazz;
+
   BookListTab(this.isSearching, this.searchText, {this.clazz, Key key})
       : super(key: key);
 
-  Future<void> _refresh(BuildContext context) async {
+  Future<void> _refreshAll(BuildContext context) async {
     final auth = context.watch<Auth>();
     if (auth.currentMember.schoolId != null) {
       final School school =
@@ -29,18 +31,37 @@ class BookListTab extends StatelessWidget {
     } else
       await Provider.of<Books>(context, listen: false)
           .fetchAndSetBooks(auth, null);
-    if (clazz != null) if (clazz.books == null)
-      await clazz.fetchAndSetClassBooks();
+  }
+
+  Future<void> _refreshClassBooks(BuildContext context) async {
+    if (context.watch<Books>().books == null) await _refreshAll(context);
+
+    if (clazz != null) {
+      if (clazz?.books == null) {
+        print('postive ');
+        await clazz.fetchAndSetClassBooks();
+      }
+    }
   }
 
   List<Book> loadBooks(BuildContext context) {
-    List<Book> _books = [];
+    var _books = context.watch<Books>().books;
+
     if (clazz != null) {
-      if (clazz.books != null) if (clazz.books.isNotEmpty)
-        _books = classBookToFullBook(clazz.books, context.watch<Books>().books);
-      _books = [];
-    } else
-      _books = context.watch<Books>().books;
+      if (clazz.books != null) {
+        print('Full books' + _books.length.toString());
+        print('Class books' + clazz.books.length.toString());
+        _books = classBookToFullBook(clazz.books, _books);
+      } else
+        return null;
+    }
+
+    if (_books == null) {
+      return null;
+    }
+
+    print('isSearching booklist : ' + isSearching.toString());
+    print('searchText : ' + searchText.toString());
 
     if (isSearching)
       return _books
@@ -53,14 +74,13 @@ class BookListTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Book> books = loadBooks(context);
+    BookListTab.clazzStatic = clazz;
 
     return RefreshIndicator(
-      onRefresh: () => _refresh(context),
-      child: books.isNotEmpty
-          ? BookList(loadBooks(context))
-          : FutureBuilder(
-              future: _refresh(context),
+      onRefresh: () => _refreshClassBooks(context),
+      child: loadBooks(context) == null
+          ? FutureBuilder(
+              future: _refreshClassBooks(context),
               builder: (ctx, dataSnapshot) {
                 if (dataSnapshot.connectionState == ConnectionState.waiting) {
                   return Center(
@@ -74,26 +94,8 @@ class BookListTab extends StatelessWidget {
                   return BookList(loadBooks(context));
                 }
               },
-            ),
-
-      //   child: books.isNotEmpty
-      // ? BookList(books)
-      // : FutureBuilder(
-      //     future: _refresh(context),
-      //     builder: (ctx, dataSnapshot) {
-      //       if (dataSnapshot.connectionState == ConnectionState.waiting) {
-      //         return Center(
-      //           child: CircularProgressIndicator(),
-      //         );
-      //       } else if (dataSnapshot.error != null) {
-      //         // Error handling
-      //         return Center(child: Text('An Error occured'));
-      //       } else {
-      //         print('Going through FutureBuilder');
-      //         return BookList(loadBooks(context));
-      //       }
-      //     },
-      //   ),
+            )
+          : BookList(loadBooks(context)),
     );
   }
 }
@@ -114,6 +116,7 @@ class BookList extends StatelessWidget {
       //   value: books[i],
       //   child: BookItem(),
       // ),
+
       itemBuilder: (ctx, i) => BookItem(books[i]),
     );
     //});

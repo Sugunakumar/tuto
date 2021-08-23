@@ -12,7 +12,7 @@ import '../data/constants.dart';
 class Books with ChangeNotifier {
   final db = FirebaseFirestore.instance;
 
-  List<Book> _books = [];
+  List<Book> _books;
 
 // imageUrl:
 // 'https://cdn.pixabay.com/photo/2016/10/02/22/17/red-t-shirt-1710578_1280.jpg',
@@ -21,7 +21,7 @@ class Books with ChangeNotifier {
 // 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Cast-Iron-Pan.jpg/1024px-Cast-Iron-Pan.jpg',
 
   List<Book> get books {
-    return _books.toList();
+    return _books;
   }
 
   // List<Book> get favoriteItems {
@@ -69,7 +69,10 @@ class Books with ChangeNotifier {
       else
         print('to be handled');
 
-      if (snapshot.size == 0) return loadedBooks;
+      if (snapshot.size == 0) {
+        _books = loadedBooks;
+        return loadedBooks;
+      }
       // final userFavSnapshot =
       //     await db.collection(membersTableName).doc(currentUserId).get();
 

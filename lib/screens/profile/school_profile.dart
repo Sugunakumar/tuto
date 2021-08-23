@@ -6,7 +6,11 @@ import 'package:tuto/new_providers/school.dart';
 import 'package:tuto/new_providers/schools.dart';
 import 'package:tuto/providers/auth.dart';
 import 'package:tuto/screens/edit/edit_class.dart';
+import 'package:tuto/screens/edit/edit_schoolStudent.dart';
+
 import 'package:tuto/screens/edit/edit_schoolTeacher.dart';
+import 'package:tuto/widgets/list/schoolStudents_list.dart';
+
 import 'package:tuto/widgets/list/teachers_list.dart';
 
 import '../../widgets/list/classes_list.dart';
@@ -28,7 +32,7 @@ class _SchoolProfileState extends State<SchoolProfile>
     Icons.search,
     color: Colors.white,
   );
-  Widget appBarTitle = new Text("WorkBook");
+  Widget appBarTitle;
   bool _isSearching;
   String _searchText = "";
 
@@ -52,7 +56,7 @@ class _SchoolProfileState extends State<SchoolProfile>
 
   @override
   void initState() {
-    _tabController = TabController(length: 2, vsync: this, initialIndex: 0);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: 0);
     _tabController.addListener(_handleTabIndex);
     _isSearching = false;
     super.initState();
@@ -77,10 +81,8 @@ class _SchoolProfileState extends State<SchoolProfile>
   Widget build(BuildContext context) {
     final schoolId = ModalRoute.of(context).settings.arguments as String;
     SchoolProfile.schoolId = schoolId;
-    print("schoolId : " + schoolId);
 
     _loadedSchool = context.watch<Schools>().findById(schoolId);
-    print("loadedSchool.name : " + _loadedSchool.name);
 
     final auth = Provider.of<Auth>(context, listen: false);
     // await auth.fetchAndSetMembers();
@@ -88,7 +90,7 @@ class _SchoolProfileState extends State<SchoolProfile>
     return SafeArea(
       top: false,
       child: DefaultTabController(
-        length: 2,
+        length: 3,
         child: Scaffold(
           appBar: buildBar(context),
           body: TabBarView(
@@ -96,6 +98,7 @@ class _SchoolProfileState extends State<SchoolProfile>
             children: [
               TeachersTab(_loadedSchool, _isSearching, _searchText),
               ClassesTab(_loadedSchool, _isSearching, _searchText),
+              SchoolStudentsTab(_loadedSchool, _isSearching, _searchText),
             ],
           ),
           floatingActionButton: _bottomButtons(auth),
@@ -106,8 +109,7 @@ class _SchoolProfileState extends State<SchoolProfile>
 
   Widget buildBar(BuildContext context) {
     return new AppBar(
-      title: appBarTitle,
-      centerTitle: true,
+      title: appBarTitle != null ? appBarTitle : new Text(_loadedSchool.name),
       actions: <Widget>[
         new IconButton(
           icon: actionIcon,
@@ -148,6 +150,7 @@ class _SchoolProfileState extends State<SchoolProfile>
         tabs: [
           Tab(child: Text("Teachers")),
           Tab(child: Text("Classes")),
+          Tab(child: Text("Students")),
         ],
       ),
     );
@@ -201,6 +204,19 @@ class _SchoolProfileState extends State<SchoolProfile>
                 //await addTeacherByEmailDialog(context);
                 Navigator.of(context)
                     .pushNamed(EditSchoolTeacherScreen.routeName);
+              },
+              child: Icon(Icons.add),
+            )
+          : null;
+    } else if (_tabController.index == 2) {
+      return auth.currentMember.roles.contains(Role.SchoolAdmin)
+          ? FloatingActionButton(
+              shape: StadiumBorder(),
+              onPressed: () {
+                print('floating action button');
+                //await addTeacherByEmailDialog(context);
+                Navigator.of(context)
+                    .pushNamed(EditSchoolStudentScreen.routeName);
               },
               child: Icon(Icons.add),
             )

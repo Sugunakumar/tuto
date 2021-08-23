@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tuto/new_providers/book.dart';
+
+import 'package:tuto/new_providers/books.dart';
 import 'package:tuto/new_providers/chapter.dart';
+import 'package:tuto/screens/profile/book_profile.dart';
 
 class EditChapterScreen extends StatefulWidget {
   static const routeName = '/edit-chapter';
@@ -25,6 +28,8 @@ class _EditChapterScreenState extends State<EditChapterScreen> {
     'index': '',
     'title': '',
   };
+
+  Book loadedBook;
   var _isInit = true;
   var _isLoading = false;
   String titleAction = "Edit Chapter";
@@ -32,10 +37,12 @@ class _EditChapterScreenState extends State<EditChapterScreen> {
   @override
   void didChangeDependencies() {
     if (_isInit) {
+      loadedBook = Provider.of<Books>(context, listen: false)
+          .findBookById(BookProfile.bookId);
+
       final chapterId = ModalRoute.of(context).settings.arguments as String;
       if (chapterId != null) {
-        _editedChapter = Provider.of<Book>(context, listen: false)
-            .findChapterById(chapterId);
+        _editedChapter = loadedBook.findChapterById(chapterId);
         _initValues = {
           'index': _editedChapter.index.toString(),
           'title': _editedChapter.title,
@@ -64,12 +71,12 @@ class _EditChapterScreenState extends State<EditChapterScreen> {
       _isLoading = true;
     });
     if (_editedChapter.id != null) {
-      await Provider.of<Book>(context, listen: false)
-          .updateChapter(_editedChapter.id, _editedChapter);
+      await loadedBook.updateChapter(_editedChapter.id, _editedChapter);
     } else {
       try {
-        await Provider.of<Book>(context, listen: false)
-            .addChapter(_editedChapter);
+        print('_editedChapter.title : ' + _editedChapter.title);
+        print('_editedChapter.index : ' + _editedChapter.index.toString());
+        await loadedBook.addChapter(_editedChapter);
       } catch (e) {
         await showDialog<Null>(
             context: context,
@@ -77,7 +84,7 @@ class _EditChapterScreenState extends State<EditChapterScreen> {
                   title: Text('An error occured!'),
                   content: Text('Something went wrong'),
                   actions: [
-                    FlatButton(
+                    TextButton(
                       child: Text('Okay'),
                       onPressed: () {
                         Navigator.of(context).pop();

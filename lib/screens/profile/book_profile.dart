@@ -1,148 +1,246 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tuto/common/utils.dart';
 import 'package:tuto/new_providers/book.dart';
+import 'package:tuto/new_providers/books.dart';
+import 'package:tuto/new_providers/chapter.dart';
+
+import 'package:tuto/new_providers/classBook.dart';
+import 'package:tuto/widgets/item/chapter_item.dart';
+import 'package:tuto/widgets/list/books_list.dart';
 
 import '../../data/constants.dart';
 import '../../providers/auth.dart';
 import '../edit/edit_chapter.dart';
-import '../../widgets/list/chapters_list.dart';
 
-// Book _loadedBook;
+class BookProfile extends StatefulWidget {
+  static const routeName = '/book-profile';
+  static String bookId;
 
-// class BookProfile extends StatefulWidget {
-//   static const routeName = '/book-chapters';
-//   static String bookId;
+  @override
+  _BookProfileState createState() => _BookProfileState();
+}
 
+class _BookProfileState extends State<BookProfile>
+    with SingleTickerProviderStateMixin {
+  Icon actionIcon = new Icon(
+    Icons.search,
+    color: Colors.white,
+  );
+  bool _isSearching;
+  String _searchText = "";
+  Widget appBarTitle;
 
-//   @override
-//   _BookProfileState createState() => _BookProfileState();
-// }
+  final TextEditingController _searchQuery = new TextEditingController();
 
-// class _BookProfileState extends State<BookProfile> with SingleTickerProviderStateMixin  {
-//   @override
-//   Widget build(BuildContext context) {
-//     final authData = Provider.of<Auth>(context, listen: false);
-//     //final booksData = Provider.of<Books>(context, listen: false);
-//     //final chaptersData = Provider.of<Chapters>(context, listen: false);
+  _BookProfileState() {
+    _searchQuery.addListener(() {
+      if (_searchQuery.text.isEmpty) {
+        setState(() {
+          _isSearching = false;
+          _searchText = "";
+        });
+      } else {
+        setState(() {
+          _isSearching = true;
+          _searchText = _searchQuery.text;
+        });
+      }
+    });
+  }
 
-//     //final loadedBook = ModalRoute.of(context).settings.arguments as Book; // is the id!
-//     //print("bookId : " + bookId);
-//     //final loadedBook = booksData.findBookById(bookId);
-//     //final chapters = loadedBook.fetchAndSetChapters(bookId);
-//     //print("chapters length : " + chapters.length.toString());
+  @override
+  void initState() {
+    _isSearching = false;
+    super.initState();
+  }
 
-//     final bookData = Provider.of<BookNotifier>(context, listen: false);
-//     final loadedBook = bookData.book;
-//     print("loadedBook.name : " + loadedBook.title);
-//     print("bookData.school.name : " + bookData.school.name);
-//     print("bookData.clazz.name : " + bookData.clazz.name);
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text(loadedBook.title.toUpperCase()),
-//         actions: <Widget>[
-//           IconButton(
-//             icon: const Icon(Icons.add),
-//             onPressed: () {
-//               Navigator.of(context).pushNamed(EditChapterScreen.routeName);
-//             },
-//           ),
-//         ],
-//       ),
-//       body: bookData.chapters.isEmpty
-//           ? FutureBuilder(
-//               future: bookData.fetchAndSetChapters(),
-//               //future: chaptersData.fetchAndSetChapters(bookId),
-//               builder: (ctx, dataSnapshot) {
-//                 if (dataSnapshot.connectionState == ConnectionState.waiting) {
-//                   return Center(
-//                     child: CircularProgressIndicator(),
-//                   );
-//                 } else if (dataSnapshot.error != null) {
-//                   // Error handling
-//                   print(dataSnapshot.error.toString());
-//                   return Center(child: Text('An Error occured book'));
-//                 } else {
-//                   return ChaptersList(bookData.chapters);
-//                   // return Consumer<Chapters>(
-//                   //   builder: (ctx, chapterData, child) => ListView.builder(
-//                   //     itemCount: chapterData.chapters.length,
-//                   //     itemBuilder: (ctx, i) => ChangeNotifierProvider.value(
-//                   //       value: chapterData.chapters[i],
-//                   //       child: ChapterList(),
-//                   //     ),
-//                   //   ),
-//                   // );
-//                 }
-//               })
-//           : ChaptersList(bookData.chapters),
-//       floatingActionButton: authData.hasAccess(Entity.Chapter, Operations.Add)
-//           ? FloatingActionButton(
-//               child: Icon(Icons.add),
-//               onPressed: () =>
-//                   Navigator.of(context).pushNamed(EditChapterScreen.routeName),
-//             )
-//           : Container(),
-//     );
-//   }
-// }
+  Widget buildBar(BuildContext context, String title) {
+    return new AppBar(
+      title: appBarTitle != null ? appBarTitle : new Text(title),
+      actions: <Widget>[
+        new IconButton(
+          icon: actionIcon,
+          onPressed: () {
+            setState(() {
+              if (this.actionIcon.icon == Icons.search) {
+                this.actionIcon = new Icon(
+                  Icons.close,
+                  color: Colors.white,
+                );
+                appBarTitle = new TextField(
+                  controller: _searchQuery,
+                  style: new TextStyle(
+                    color: Colors.white,
+                  ),
+                  decoration: new InputDecoration(
+                      prefixIcon: new Icon(Icons.search, color: Colors.white),
+                      hintText: "Search...",
+                      hintStyle: new TextStyle(color: Colors.white)),
+                );
+                _handleSearchStart();
+              } else {
+                _handleSearchEnd(title);
+              }
+            });
+          },
+        ),
+        // IconButton(
+        //   icon: const Icon(Icons.edit),
+        //   onPressed: () {
+        //     // Navigator.of(context).pushNamed(EditSchoolScreen.routeName,
+        //     //     arguments: loadedSchool.id);
+        //   },
+        // ),
+      ],
+    );
+  }
 
-// // body: Column(
-// //   children: <Widget>[
-// //     Container(
-// //       height: 300,
-// //       width: double.infinity,
-// //       child: Image.network(
-// //         loadedProduct.imageUrl,
-// //         fit: BoxFit.cover,
-// //       ),
-// //     ),
-// //     SizedBox(height: 10),
-// //     Text(
-// //       '\$${loadedProduct.price}',
-// //       style: TextStyle(
-// //         color: Colors.grey,
-// //         fontSize: 20,
-// //       ),
-// //     ),
-// //     SizedBox(
-// //       height: 10,
-// //     ),
-// //     Container(
-// //       padding: EdgeInsets.symmetric(horizontal: 10),
-// //       width: double.infinity,
-// //       child: Text(
-// //         loadedProduct.description,
-// //         textAlign: TextAlign.center,
-// //         softWrap: true,
-// //       ),
-// //     ),
-// //     SizedBox(
-// //       height: 10,
-// //     ),
-// //     // Container(
-// //     //   padding: EdgeInsets.symmetric(horizontal: 10),
-// //     //   width: double.infinity,
-// //     //   child: Padding(
-// //     //     padding: EdgeInsets.all(8),
-// //     //     child: Text("data"),
-// //     //     // child: ListView.builder(
-// //     //     //   itemCount: chapters.length,
-// //     //     //   itemBuilder: (ctx, i) => ChangeNotifierProvider.value(
-// //     //     //     // builder: (c) => products[i],
-// //     //     //     value: chapters[i],
-// //     //     //     child: ChapterItem(),
-// //     //     //   ),
-// //     //     // ),
-// //     //   ),
-// //     // ),
-// //     new Expanded(
-// //         child: ListView.builder(
-// //       itemCount: chapters.length,
-// //       itemBuilder: (ctx, i) => ChangeNotifierProvider.value(
-// //         value: chapters[i],
-// //         child: ChapterItem(),
-// //       ),
-// //     ))
-// //   ],
-// // ),
+  void _handleSearchStart() {
+    setState(() {
+      _isSearching = true;
+    });
+  }
+
+  void _handleSearchEnd(String title) {
+    setState(() {
+      this.actionIcon = new Icon(
+        Icons.search,
+        color: Colors.white,
+      );
+      this.appBarTitle = new Text(title);
+      _isSearching = false;
+      _searchQuery.clear();
+    });
+  }
+
+  Widget _bottomButtons() {
+    return FloatingActionButton(
+      shape: StadiumBorder(),
+      onPressed: () {
+        print(' add chapters');
+        Navigator.of(context).pushNamed(EditChapterScreen.routeName);
+      },
+      child: Icon(
+        Icons.add,
+      ),
+    );
+  }
+
+  Future<void> _refreshAllChapters(
+      BuildContext context, Book loadedBook) async {
+    await loadedBook.fetchAndSetChapters();
+  }
+
+  Future<void> _refreshClassBookChapters(
+      BuildContext context, Book loaddedBook) async {
+    if (loaddedBook.chapters == null) {
+      await _refreshAllChapters(context, loaddedBook);
+    }
+
+    if (BookListTab.clazzStatic != null) {
+      ClassBook classBook =
+          BookListTab.clazzStatic.findClassBookById(loaddedBook.id);
+
+      if (classBook.classChapters == null) {
+        await classBook.fetchAndSetChapters();
+      }
+    }
+  }
+
+  List<Chapter> loadChapters(BuildContext context, Book book) {
+    print('loadChapters');
+    // Load full chapters of the full book
+    List<Chapter> chaps = book.chapters;
+
+    print('chaps ' + chaps.toString());
+    // Load limited chapters from the class book
+    if (BookListTab.clazzStatic != null) {
+      var classChaps =
+          BookListTab.clazzStatic?.findClassBookById(book.id)?.classChapters;
+      if (classChaps != null) {
+        chaps = classChapterToFullChapter(classChaps, chaps);
+      } else
+        return null;
+    }
+
+    if (chaps == null) {
+      return null;
+    }
+    // print('isSearching book profile: ' + _isSearching.toString());
+    // print('searchText : ' + _searchText.toString());
+    // print('chaps.length : ' + chaps.length.toString());
+
+    if (_isSearching)
+      return chaps
+          .where(
+              (s) => s.title.toLowerCase().contains(_searchText.toLowerCase()))
+          .toList();
+    else
+      return chaps;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bookId = ModalRoute.of(context).settings.arguments as String;
+    if (bookId == null) print("book id is null");
+
+    BookProfile.bookId = bookId;
+
+    final auth = Provider.of<Auth>(context, listen: false);
+
+    Book loadedFullBook = context.watch<Books>().findBookById(bookId);
+    //ClassBook loadedClassBook = BookListTab.clazzStatic.findClassBookById(bookId);
+
+    return Scaffold(
+      appBar: buildBar(context, loadedFullBook.title),
+      body: RefreshIndicator(
+        onRefresh: () => _refreshClassBookChapters(context, loadedFullBook),
+        child: loadChapters(context, loadedFullBook) ==
+                null // Chapters are not loaded
+            ? FutureBuilder(
+                future: _refreshClassBookChapters(
+                    context, loadedFullBook), // load the limited chapters
+                builder: (ctx, dataSnapshot) {
+                  if (dataSnapshot.connectionState == ConnectionState.waiting) {
+                    return Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  } else if (dataSnapshot.error != null) {
+                    // Error handling
+                    return Center(child: Text('An Error occured Book Profile'));
+                  } else {
+                    print('Going through FutureBuilder book profile');
+                    return ChapterList(loadChapters(context,
+                        loadedFullBook)); // Get and Show only limited chapters
+                  }
+                },
+              )
+            : ChapterList(loadChapters(
+                context, loadedFullBook)), // Get and Show only limited chapters
+      ),
+      floatingActionButton: auth.currentMember.roles.contains(Role.SchoolAdmin)
+          ? _bottomButtons()
+          : null,
+    );
+  }
+}
+
+class ChapterList extends StatelessWidget {
+  final List<Chapter> chapters;
+  ChapterList(this.chapters);
+
+  @override
+  Widget build(BuildContext context) {
+    print("chapters list : " + chapters.length.toString());
+    return ListView.builder(
+      itemCount: chapters.length,
+      itemBuilder: (ctx, i) => ChapterItem(chapters[i]),
+    );
+  }
+}

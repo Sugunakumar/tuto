@@ -1,14 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:autocomplete_textfield/autocomplete_textfield.dart';
 import 'package:tuto/new_providers/class.dart';
-import 'package:tuto/new_providers/classTeacher.dart';
-import 'package:tuto/new_providers/member.dart';
 import 'package:tuto/new_providers/school.dart';
 import 'package:tuto/new_providers/schoolTeacher.dart';
 import 'package:tuto/new_providers/schools.dart';
-import 'package:tuto/providers/auth.dart';
+
 import 'package:tuto/screens/profile/school_profile.dart';
 
 import '../../data/constants.dart';
@@ -21,48 +18,6 @@ class EditClassScreen extends StatefulWidget {
 }
 
 class _EditClassScreenState extends State<EditClassScreen> {
-  Future<void> _refreshPage(BuildContext context) async {
-    await Provider.of<Auth>(context, listen: false).fetchAndSetMembers();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<Auth>();
-
-    print("auth.members.length : " + auth.members.length.toString());
-
-    return RefreshIndicator(
-      onRefresh: () => _refreshPage(context),
-      child: auth.members.isNotEmpty
-          ? EditClassForm(auth)
-          : FutureBuilder(
-              future: _refreshPage(context),
-              builder: (ctx, dataSnapshot) {
-                if (dataSnapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: CircularProgressIndicator(),
-                  );
-                } else if (dataSnapshot.error != null) {
-                  // Error handling
-                  return Center(child: Text('An Error occured'));
-                } else {
-                  return EditClassForm(auth);
-                }
-              },
-            ),
-    );
-  }
-}
-
-class EditClassForm extends StatefulWidget {
-  final Auth auth;
-  EditClassForm(this.auth, {Key key}) : super(key: key);
-
-  @override
-  _EditClassFormState createState() => _EditClassFormState();
-}
-
-class _EditClassFormState extends State<EditClassForm> {
   final _nameFocusNode = FocusNode();
   final _iconFocusNode = FocusNode();
   final _gradeFocusNode = FocusNode();
@@ -110,9 +65,11 @@ class _EditClassFormState extends State<EditClassForm> {
           'icon': _editedClass.icon,
           'grade': _editedClass.grade.toString().split('.').last,
           'academicYear': _editedClass.academicYear,
-          'classTeacherEmail': _editedClass.classTeacher.user.email,
+          'classTeacherEmail': _editedClass.classTeacher == null
+              ? ''
+              : _editedClass.classTeacher.user.email,
         };
-        titleAction = "Edit Class";
+        titleAction = "Update Class";
       }
 
       _isInit = false;
@@ -141,7 +98,7 @@ class _EditClassFormState extends State<EditClassForm> {
     if (_editedClass.id == null) {
       _school.addClass(_editedClass);
     } else {
-      print('update : ' + _editedClass.toString());
+      print('update : ' + _editedClass.id);
       _school.updateClass(_editedClass.id, _editedClass);
     }
     setState(() {
@@ -318,28 +275,32 @@ class _EditClassFormState extends State<EditClassForm> {
                         ),
                       ),
                       new Padding(
-                          padding: EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
-                          child: new Card(
-                              child: selected != null
-                                  ? new Column(children: [
-                                      new ListTile(
-                                        leading: selected.user.imageURL !=
-                                                    null ||
-                                                selected.user.imageURL == ""
-                                            ? CircleAvatar(
-                                                backgroundImage: NetworkImage(
-                                                    selected.user.imageURL),
-                                              )
-                                            : CircleAvatar(
-                                                child: Text(selected
-                                                    .user.username[0]
-                                                    .toUpperCase()),
-                                              ),
-                                        title: new Text(selected.user.username),
-                                        //trailing: new Text("Stars: ${selected.stars}")),
-                                      ),
-                                    ])
-                                  : new Icon(Icons.cancel))),
+                        padding: EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
+                        child: new Card(
+                          child: selected != null
+                              ? new Column(children: [
+                                  new ListTile(
+                                    leading: selected.user.imageURL != null ||
+                                            selected.user.imageURL == ""
+                                        ? CircleAvatar(
+                                            backgroundImage: NetworkImage(
+                                                selected.user.imageURL),
+                                          )
+                                        : CircleAvatar(
+                                            child: Text(selected
+                                                .user.username[0]
+                                                .toUpperCase()),
+                                          ),
+                                    title: new Text(selected.user.username),
+                                    //trailing: new Text("Stars: ${selected.stars}")),
+                                  ),
+                                ])
+                              : Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Text('Teacher is not choosen'),
+                                ),
+                        ),
+                      ),
                     ]),
                     // added != null
                     //     ? Padding(
@@ -349,7 +310,7 @@ class _EditClassFormState extends State<EditClassForm> {
                     //     : Container(),
 
                     ElevatedButton(
-                      child: Text('Add Class'),
+                      child: Text(titleAction),
                       onPressed: () {
                         _saveForm();
                       },

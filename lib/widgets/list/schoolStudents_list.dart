@@ -1,33 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tuto/data/constants.dart';
-import 'package:tuto/new_providers/class.dart';
 import 'package:tuto/new_providers/school.dart';
+import 'package:tuto/new_providers/schoolStudent.dart';
 import 'package:tuto/providers/auth.dart';
-import 'package:tuto/widgets/item/classTeacher_item.dart';
+import 'package:tuto/widgets/item/schoolStudent_item.dart';
 
-class StudentsTab extends StatelessWidget {
-  final Class loadedClass;
+class SchoolStudentsTab extends StatelessWidget {
+  final School loadedSchool;
   final bool isSearching;
   final String searchText;
 
-  StudentsTab(this.loadedClass, this.isSearching, this.searchText, {Key key})
+  SchoolStudentsTab(this.loadedSchool, this.isSearching, this.searchText,
+      {Key key})
       : super(key: key);
 
   Future<void> _refreshProducts(BuildContext context) async {
-    // fetch and set Members
     final auth = Provider.of<Auth>(context, listen: false);
-    await auth.fetchAndSetMembers();
-    // fetch and set School Teachers
-    //await this.loadedClass.fetchAndSetStudents();
-    print("refresh called");
+    await this.loadedSchool.fetchAndSetStudents(auth);
   }
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () => _refreshProducts(context),
-      child: loadedClass.students.isEmpty
+      child: loadedSchool.students.isEmpty
           ? FutureBuilder(
               future: _refreshProducts(context),
               builder: (ctx, dataSnapshot) {
@@ -40,20 +36,20 @@ class StudentsTab extends StatelessWidget {
                   print(dataSnapshot.error.toString());
                   return Center(child: Text('An Error occured'));
                 } else {
-                  return StudentsList(loadedClass, isSearching, searchText);
+                  return StudentsList(loadedSchool, isSearching, searchText);
                 }
               })
-          : StudentsList(loadedClass, isSearching, searchText),
+          : StudentsList(loadedSchool, isSearching, searchText),
     );
   }
 }
 
 class StudentsList extends StatefulWidget {
-  final Class loadedClass;
+  final School loadedSchool;
   final bool isSearching;
   final String searchText;
 
-  const StudentsList(this.loadedClass, this.isSearching, this.searchText,
+  const StudentsList(this.loadedSchool, this.isSearching, this.searchText,
       {Key key})
       : super(key: key);
 
@@ -64,21 +60,21 @@ class StudentsList extends StatefulWidget {
 class _StudentsListState extends State<StudentsList> {
   @override
   Widget build(BuildContext context) {
-    var teachers;
+    List<SchoolStudent> students;
     if (widget.isSearching)
-      //teachers = widget.loadedClass.findTeachersByNamePattern(widget.searchText);
-      teachers = null;
+      students =
+          widget.loadedSchool.findStudentByNamePattern(widget.searchText);
     else
-      teachers = widget.loadedClass.students;
+      students = widget.loadedSchool.students;
 
-    return teachers.isNotEmpty
+    return students.isNotEmpty
         ? ListView.builder(
-            itemCount: teachers.length,
-            itemBuilder: (ctx, i) => SchoolTeacherItem(teachers[i]),
+            itemCount: students.length,
+            itemBuilder: (ctx, i) => SchoolStudentItem(students[i]),
           )
         : Center(
             child: Container(
-              child: Text("Please add Teachers"),
+              child: Text("Please add Students"),
             ),
           );
   }

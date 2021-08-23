@@ -8,7 +8,7 @@ import 'package:tuto/screens/profile/school_profile.dart';
 import '../../new_providers/schoolTeacher.dart';
 
 class EditSchoolTeacherScreen extends StatefulWidget {
-  static const routeName = '/add-teacher';
+  static const routeName = '/add-schoolTeacher';
 
   @override
   _EditSchoolTeacherScreenState createState() =>
@@ -16,54 +16,15 @@ class EditSchoolTeacherScreen extends StatefulWidget {
 }
 
 class _EditSchoolTeacherScreenState extends State<EditSchoolTeacherScreen> {
-  Future<void> _refreshPage(BuildContext context) async {
-    await Provider.of<Auth>(context, listen: false).fetchAndSetMembers();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<Auth>();
-
-    print("auth.members.length : " + auth.members.length.toString());
-
-    return RefreshIndicator(
-      onRefresh: () => _refreshPage(context),
-      child: auth.members.isNotEmpty
-          ? EditSchoolForm(auth)
-          : FutureBuilder(
-              future: _refreshPage(context),
-              builder: (ctx, dataSnapshot) {
-                if (dataSnapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: CircularProgressIndicator(),
-                  );
-                } else if (dataSnapshot.error != null) {
-                  // Error handling
-                  return Center(child: Text('An Error occured'));
-                } else {
-                  return EditSchoolForm(auth);
-                }
-              },
-            ),
-    );
-  }
-}
-
-class EditSchoolForm extends StatefulWidget {
-  final Auth auth;
-  EditSchoolForm(this.auth, {Key key}) : super(key: key);
-
-  @override
-  _EditSchoolFormState createState() => _EditSchoolFormState();
-}
-
-class _EditSchoolFormState extends State<EditSchoolForm> {
   final _emailFocusNode = FocusNode();
   final _qualificationFocusNode = FocusNode();
   final _experienceFocusNode = FocusNode();
   final _salaryFocusNode = FocusNode();
 
   final _form = GlobalKey<FormState>();
+  final _emailForm = GlobalKey<FormState>();
+
+  final TextEditingController _searchQuery = new TextEditingController();
 
   var _edited = SchoolTeacher(
     qualification: '',
@@ -81,32 +42,24 @@ class _EditSchoolFormState extends State<EditSchoolForm> {
 
   School _school;
 
-  //final TextEditingController _typeAheadController = TextEditingController();
-  //String _selectedCity;
-  //String email = '';
-  //var _edited = Teacher(userId: '', name: '', imageURL: '');
-
   var _isInit = true;
   var _isLoading = false;
+  var _isValidation = false;
+  var _validationFailed = false;
 
-  //Member addedUser;
+  Member _selectedMember;
   String titleAction = "Add Teacher";
-  var teacherId;
-
-  static String _displayStringForOption(Member member) => member.username;
 
   @override
   void didChangeDependencies() {
     if (_isInit) {
       final schoolId = SchoolProfile.schoolId;
-      print('schoolId ' + schoolId);
+
       _school = Provider.of<Schools>(context, listen: false).findById(schoolId);
-      print('_school  :' + _school.name);
-      teacherId = ModalRoute.of(context).settings.arguments as String;
+
+      final teacherId = ModalRoute.of(context).settings.arguments as String;
       if (teacherId != null) {
-        print('teacherId ' + teacherId);
         _edited = _school.findTeacherById(teacherId);
-        print('_edited experience :' + _edited.experience.toString());
 
         _initValues = {
           'email': _edited.user.email,
@@ -114,7 +67,7 @@ class _EditSchoolFormState extends State<EditSchoolForm> {
           'experience': _edited.experience,
           'salary': _edited.salary,
         };
-        titleAction = "Edit Teacher";
+        titleAction = "Edit School Teacher";
       }
     }
 
@@ -142,16 +95,22 @@ class _EditSchoolFormState extends State<EditSchoolForm> {
     });
 
     print('_edited : ' + _edited.toString());
-    print('_edited email :' + _edited.user.email);
     print('_school  :' + _school.name);
 
     // add
-    //if (_edited.id == null) {
-    _school.addTeacher(_edited);
-    // } else // update
-    // {
-    //   //_school.addTeacher(_edited);
-    // }
+    if (_edited.user == null) {
+      _edited = SchoolTeacher(
+        qualification: _edited.qualification,
+        experience: _edited.experience,
+        user: _selectedMember,
+        salary: _edited.salary,
+      );
+
+      _school.addSchoolTeacher(_edited);
+    } else // update
+    {
+      print("update not impleted");
+    }
 
     setState(() {
       _isLoading = false;
@@ -160,19 +119,38 @@ class _EditSchoolFormState extends State<EditSchoolForm> {
     Navigator.of(context).pop();
   }
 
+  Future<void> _validateEmail(String email) async {
+    final isValid = _emailForm.currentState.validate();
+    if (!isValid) {
+      return;
+    }
+    setState(() {
+      _isValidation = true;
+    });
+    final Auth auth = Provider.of<Auth>(context, listen: false);
+    Member mem = await auth.fetchUserByEmail(email.trim());
+
+    setState(() {
+      _isValidation = false;
+      _selectedMember = mem;
+      if (mem == null) _validationFailed = true;
+    });
+    _emailForm.currentState.validate();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(titleAction),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.save),
-            onPressed: () {
-              _saveForm();
-            },
-          ),
-        ],
+        // actions: <Widget>[
+        //   IconButton(
+        //     icon: Icon(Icons.save),
+        //     onPressed: () {
+        //       _saveForm();
+        //     },
+        //   ),
+        // ],
       ),
       body: _isLoading
           ? Center(
@@ -180,125 +158,186 @@ class _EditSchoolFormState extends State<EditSchoolForm> {
             )
           : Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _form,
-                child: ListView(
-                  children: <Widget>[
-                    Text("Email"),
-                    teacherId == null
-                        ? Autocomplete<Member>(
-                            displayStringForOption: _displayStringForOption,
-                            optionsBuilder:
-                                (TextEditingValue textEditingValue) {
-                              if (textEditingValue.text.length < 3 ||
-                                  !textEditingValue.text.contains('@')) {
-                                return const Iterable<Member>.empty();
-                              }
-                              return widget.auth.members.where((Member option) {
-                                return option.email.toString().contains(
-                                    textEditingValue.text.toLowerCase());
-                              });
-                            },
-                            onSelected: (Member selection) {
-                              print(
-                                  'You just selected ${_displayStringForOption(selection)}');
+              child: _selectedMember == null
+                  ? Form(
+                      key: _emailForm,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Expanded(
+                            child: TextFormField(
+                              initialValue: _initValues['name'],
+                              controller: _searchQuery,
+                              decoration: InputDecoration(
+                                  labelText: 'Email',
+                                  hintText: 'Enter the email and hit Validate'),
+                              textInputAction: TextInputAction.next,
+                              keyboardType: TextInputType.text,
+                              focusNode: _emailFocusNode,
+                              onFieldSubmitted: (value) {
+                                _validateEmail(value);
 
-                              print('onsaved');
+                                FocusScope.of(context)
+                                    .requestFocus(_qualificationFocusNode);
+                              },
+                              validator: (value) {
+                                if (value.isEmpty ||
+                                    !value.contains('@') ||
+                                    !value.contains('.')) {
+                                  return 'Please enter a valid email address.';
+                                }
+                                print('_validationFailed : ' +
+                                    _validationFailed.toString());
+                                if (_validationFailed)
+                                  return 'The user is not registered. \nPlease request the user to sign up.';
+                                return null;
+                              },
+                            ),
+                          ),
+                          _isValidation
+                              ? Center(
+                                  child: CircularProgressIndicator(),
+                                )
+                              : TextButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _validationFailed = false;
+                                    });
+                                    print('pressed search query button : ' +
+                                        _searchQuery.text.toString());
+                                    _validateEmail(_searchQuery.text);
+                                  },
+                                  icon: Icon(Icons.refresh),
+                                  label: Text("Validate"),
+                                )
+                        ],
+                      ),
+                    )
+                  : Form(
+                      key: _form,
+                      child: ListView(
+                        children: <Widget>[
+                          new Card(
+                            child: new ListTile(
+                              leading: _selectedMember.imageURL != null ||
+                                      _selectedMember.imageURL == ""
+                                  ? CircleAvatar(
+                                      backgroundImage: NetworkImage(
+                                          _selectedMember.imageURL),
+                                    )
+                                  : CircleAvatar(
+                                      child: Text(_selectedMember.username[0]
+                                          .toUpperCase()),
+                                    ),
+                              title: new Text(_selectedMember.username),
+                              subtitle: new Text(_selectedMember.email),
+                              onTap: () {
+                                setState(() {
+                                  _selectedMember = null;
+                                });
+                                print('tapped on schoolstudent');
+                              }, //trailing: new Text("Stars: ${selected.stars}")),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 10.0,
+                          ),
+
+                          TextFormField(
+                            initialValue: _initValues['qualification'],
+                            decoration:
+                                InputDecoration(labelText: 'Qualification'),
+                            keyboardType: TextInputType.text,
+                            textInputAction: TextInputAction.next,
+                            focusNode: _qualificationFocusNode,
+                            onFieldSubmitted: (_) {
+                              FocusScope.of(context)
+                                  .requestFocus(_experienceFocusNode);
+                            },
+                            validator: (value) {
+                              if (value.isEmpty) {
+                                return 'Please enter the Qualification';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) {
                               _edited = SchoolTeacher(
-                                qualification: _edited.qualification,
+                                qualification: value,
                                 experience: _edited.experience,
-                                user: selection,
+                                user: _edited.user,
                                 salary: _edited.salary,
                               );
                             },
+                          ),
+                          // Address
+                          TextFormField(
+                            initialValue: _initValues['experience'].toString(),
+                            decoration: InputDecoration(
+                                labelText: 'Experience',
+                                hintText: 'Total Experiance in years'),
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.next,
+                            focusNode: _experienceFocusNode,
+                            onFieldSubmitted: (_) {
+                              FocusScope.of(context)
+                                  .requestFocus(_salaryFocusNode);
+                            },
+                            validator: (value) {
+                              if (value.trim().isEmpty)
+                                return 'Please enter the experience in number of years';
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _edited = SchoolTeacher(
+                                qualification: _edited.qualification,
+                                experience: int.parse(value),
+                                user: _edited.user,
+                                salary: _edited.salary,
+                              );
+                            },
+                          ),
+
+                          TextFormField(
+                            initialValue: _initValues['salary'].toString(),
+                            decoration: InputDecoration(labelText: 'Salary'),
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.next,
+                            focusNode: _salaryFocusNode,
+                            onFieldSubmitted: (_) {
+                              _saveForm();
+                            },
+                            validator: (value) {
+                              if (value.trim().isEmpty)
+                                return 'Please enter the salary per month';
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _edited = SchoolTeacher(
+                                qualification: _edited.qualification,
+                                experience: _edited.experience,
+                                user: _edited.user,
+                                salary: int.parse(value),
+                              );
+                            },
+                          ),
+                          ElevatedButton(
+                            child: Text('Add Teacher'),
+                            onPressed: () {
+                              _saveForm();
+                            },
                           )
-                        : Text(_initValues['email']),
-                    TextFormField(
-                      initialValue: _initValues['qualification'],
-                      decoration: InputDecoration(labelText: 'Qualification'),
-                      keyboardType: TextInputType.text,
-                      textInputAction: TextInputAction.next,
-                      focusNode: _qualificationFocusNode,
-                      onFieldSubmitted: (_) {
-                        FocusScope.of(context)
-                            .requestFocus(_experienceFocusNode);
-                      },
-                      validator: (value) {
-                        if (value.isEmpty) {
-                          return 'Please enter the Qualification';
-                        }
-                        return null;
-                      },
-                      onSaved: (value) {
-                        _edited = SchoolTeacher(
-                          qualification: value,
-                          experience: _edited.experience,
-                          user: _edited.user,
-                          salary: _edited.salary,
-                        );
-                      },
+                          // ..._getTeachers(),
+                          // FlatButton(
+                          //   onPressed: () {
+                          //     _saveForm();
+                          //   },
+                          //   child: Text('Add'),
+                          //   color: Colors.blueAccent,
+                          // ),
+                          // Image
+                        ],
+                      ),
                     ),
-                    // Address
-                    TextFormField(
-                      initialValue: _initValues['experience'].toString(),
-                      decoration: InputDecoration(labelText: 'Experience'),
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.next,
-                      focusNode: _experienceFocusNode,
-                      onFieldSubmitted: (_) {
-                        FocusScope.of(context).requestFocus(_salaryFocusNode);
-                      },
-                      validator: (value) {
-                        if (value.trim().isEmpty)
-                          return 'Please enter the experience in number of years';
-                        return null;
-                      },
-                      onSaved: (value) {
-                        _edited = SchoolTeacher(
-                          qualification: _edited.qualification,
-                          experience: int.parse(value),
-                          user: _edited.user,
-                          salary: _edited.salary,
-                        );
-                      },
-                    ),
-
-                    TextFormField(
-                      initialValue: _initValues['salary'].toString(),
-                      decoration: InputDecoration(labelText: 'Salary'),
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.next,
-                      focusNode: _salaryFocusNode,
-                      onFieldSubmitted: (_) {
-                        _saveForm();
-                      },
-                      validator: (value) {
-                        if (value.trim().isEmpty)
-                          return 'Please enter the salary per month';
-                        return null;
-                      },
-                      onSaved: (value) {
-                        _edited = SchoolTeacher(
-                          qualification: _edited.qualification,
-                          experience: _edited.experience,
-                          user: _edited.user,
-                          salary: int.parse(value),
-                        );
-                      },
-                    ),
-
-                    // ..._getTeachers(),
-                    // FlatButton(
-                    //   onPressed: () {
-                    //     _saveForm();
-                    //   },
-                    //   child: Text('Add'),
-                    //   color: Colors.blueAccent,
-                    // ),
-                    // Image
-                  ],
-                ),
-              ),
             ),
     );
   }

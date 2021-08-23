@@ -9,6 +9,7 @@ import 'package:tuto/new_providers/classBook.dart';
 
 import 'package:tuto/new_providers/classStudent.dart';
 import 'package:tuto/new_providers/classTeacher.dart';
+import 'package:tuto/new_providers/school.dart';
 import 'package:tuto/new_providers/schoolTeacher.dart';
 import 'package:tuto/providers/auth.dart';
 import 'package:tuto/screens/profile/school_profile.dart';
@@ -42,17 +43,13 @@ class Class with ChangeNotifier {
     return _books.toList();
   }
 
-  // List<ClassBook> findAllClassBooksByName(String searchText) {
-  //   if (searchText.isEmpty) {
-  //     return _books.toList();
-  //   }
-  //   return _books
-  //       .where((s) =>
-  //           s.book.title.toLowerCase().contains(searchText.toLowerCase()))
-  //       .toList();
-  // }
+  set classTeacher(SchoolTeacher schoolTeacher) {
+    this.classTeacher = schoolTeacher;
+  }
 
   ClassBook findClassBookById(String id) {
+    print('findClassBookById      :  ' + id.toString());
+    print('_books      :  ' + _books.length.toString());
     return _books.firstWhere((i) => i.id == id);
   }
 
@@ -168,12 +165,6 @@ class Class with ChangeNotifier {
   // }
 
   Future<void> addClassBook(ClassBook classBook, String schoolId) async {
-    final newClassBook = {
-      'joiningDate': classBook.joiningDate,
-      'id': classBook.id,
-      'teacher': classBook.teacher,
-    };
-
     try {
       await FirebaseFirestore.instance
           .collection(schoolsTableName)
@@ -181,7 +172,11 @@ class Class with ChangeNotifier {
           .collection(classesTableName)
           .doc(this.id)
           .collection(booksTableName)
-          .add(newClassBook);
+          .doc(classBook.id)
+          .set({
+        "joiningDate": DateTime.now(),
+      });
+
       final newClassBookList = ClassBook(
         joiningDate: classBook.joiningDate,
         id: classBook.id,

@@ -98,12 +98,8 @@ class CustomListItemTwo extends StatelessWidget {
         child: InkWell(
           onTap: () {
             print('Book was tapped');
-            // context.read<BookNotifier>().school =
-            //     context.read<ClassNotifier>().school;
-            // context.read<BookNotifier>().clazz =
-            //     context.read<ClassNotifier>().clazz;
-            //context.read<BookNotifier>().book = book;
-            //Navigator.of(context).pushNamed(BookProfile.routeName);
+            
+            Navigator.of(context).pushNamed(BookProfile.routeName, arguments: book.id);
           },
           // Generally, material cards use onSurface with 12% opacity for the pressed state.
           splashColor:
@@ -138,10 +134,11 @@ class CustomListItemTwo extends StatelessWidget {
                     ),
                   ),
                 ),
-                // IconButton(
-                //   icon: const Icon(Icons.more_vert),
-                //   onPressed: () {},
-                // )
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  color: Theme.of(context).buttonColor,
+                  onPressed: () {},
+                )
               ],
             ),
           ),
